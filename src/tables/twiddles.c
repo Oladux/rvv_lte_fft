@@ -1,7 +1,7 @@
 #ifndef TWIDDLES_C
 #define TWIDDLES_C
 
-#include "twiddles.h"
+#include "../include/tables/twiddles.h"
 
 const float twiddles_128[] = {
     1.0000000000f, -0.0000000000f, 0.9987954497f, -0.0490676761f, 0.9951847196f, -0.0980171412f, 0.9891765118f, -0.1467304677f,

@@ -1,8 +1,8 @@
 #ifndef BITREV_H
 #define BITREV_H
 
-#include <stddef.h>
 
+#include <stddef.h>
 
 extern const int bitrev_128[128];
 extern const int bitrev_256[256];
