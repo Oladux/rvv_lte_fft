@@ -18,13 +18,13 @@ DIRS = $(OBJDIR) $(OBJDIR)/tables $(LIBDIR)
 # Исходные файлы библиотеки
 LIB_SOURCES = $(SRCDIR)/rvv_fft.c \
               $(SRCDIR)/rvv_fft_misc.c \
-              $(TABLESDIR)/twiddles.c \
+              $(TABLESDIR)/twiddles_all.c \
               $(TABLESDIR)/bitrev.c
 
 # Объектные файлы
 LIB_OBJECTS = $(OBJDIR)/rvv_fft.o \
               $(OBJDIR)/rvv_fft_misc.o \
-              $(OBJDIR)/tables/twiddles.o \
+              $(OBJDIR)/tables/twiddles_all.o \
               $(OBJDIR)/tables/bitrev.o
 
 LIBRARY = $(LIBDIR)/librvv_fft.a

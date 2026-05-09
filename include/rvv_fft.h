@@ -7,9 +7,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "tables/twiddles.h"
+#include "tables/twiddles_all.h"
 #include "tables/bitrev.h"
 
-float* rvv_fft(float* vec, int N, int log2N);
+float* rvv_fft(float* vec, int N);
 
 #endif

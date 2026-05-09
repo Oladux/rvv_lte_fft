@@ -21,7 +21,7 @@ int fft_test(){
 
     prepare_fft_vector(Re, Im, vec, N);
 
-    vec = rvv_fft(vec, N, 7);
+    vec = rvv_fft(vec, N);
 
 
     for (int i = 0; i < N; i++) {
