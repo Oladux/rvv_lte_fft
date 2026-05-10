@@ -1,5 +1,5 @@
-#ifndef TWIDDLES_H
-#define TWIDDLES_H
+#ifndef TWIDDLES2_H
+#define TWIDDLES2_H
 
 #include <stddef.h>
 
@@ -29,6 +29,6 @@ extern const int tw_offsets_2048[];
 extern const int log2_2048;
 
 
-extern const void get_twiddle(int, const float**, const int**, int*);
+extern const void get_twiddle_r2(int, const float**, const int**, int*);
    
 #endif

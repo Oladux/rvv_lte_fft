@@ -18,13 +18,15 @@ DIRS = $(OBJDIR) $(OBJDIR)/tables $(LIBDIR)
 # Исходные файлы библиотеки
 LIB_SOURCES = $(SRCDIR)/rvv_fft.c \
               $(SRCDIR)/rvv_fft_misc.c \
-              $(TABLESDIR)/twiddles_all.c \
+              $(TABLESDIR)/twiddles_radix2.c \
+			  $(TABLESDIR)/twiddles_radix4.c \
               $(TABLESDIR)/bitrev.c
 
 # Объектные файлы
 LIB_OBJECTS = $(OBJDIR)/rvv_fft.o \
               $(OBJDIR)/rvv_fft_misc.o \
-              $(OBJDIR)/tables/twiddles_all.o \
+              $(OBJDIR)/tables/twiddles_radix2.o \
+			  $(OBJDIR)/tables/twiddles_radix4.o \
               $(OBJDIR)/tables/bitrev.o
 
 LIBRARY = $(LIBDIR)/librvv_fft.a
@@ -54,7 +56,8 @@ $(TEST_TARGET): $(TEST_SOURCE) $(LIBRARY)
 
 # Очистка
 clean:
-	rm -rf $(BUILDDIR)
 	rm -f $(TEST_TARGET)
+	rm -rf $(LIBDIR)
+	rm -rf $(OBJDIR)
 
 .PHONY: all clean distclean

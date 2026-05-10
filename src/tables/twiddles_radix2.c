@@ -1,13 +1,13 @@
-#ifndef TWIDDLES_C
-#define TWIDDLES_C
+#ifndef TWIDDLES2_C
+#define TWIDDLES2_C
 
 #include <stddef.h>
-#include "../include/tables/twiddles_all.h"
+#include "../include/tables/twiddles_radix2.h"
 // =============================
 // N = 128
 // =============================
 
-const float twiddles_128[] __attribute__((aligned(64))) = {
+const float twiddles_r2_128[] __attribute__((aligned(64))) = {
     // stage 1
     1.000000000f, -0.000000000f,
 
@@ -167,7 +167,7 @@ const float twiddles_128[] __attribute__((aligned(64))) = {
 // N = 256
 // =============================
 
- const float twiddles_256[] __attribute__((aligned(64))) = {
+ const float twiddles_r2_256[] __attribute__((aligned(64))) = {
     // stage 1
     1.000000000f, -0.000000000f,
 
@@ -458,7 +458,7 @@ const float twiddles_128[] __attribute__((aligned(64))) = {
 // N = 512
 // =============================
 
- const float twiddles_512[] __attribute__((aligned(64))) = {
+ const float twiddles_r2_512[] __attribute__((aligned(64))) = {
     // stage 1
     1.000000000f, -0.000000000f,
 
@@ -1008,7 +1008,7 @@ const float twiddles_128[] __attribute__((aligned(64))) = {
 // N = 1024
 // =============================
 
- const float twiddles_1024[] __attribute__((aligned(64))) = {
+ const float twiddles_r2_1024[] __attribute__((aligned(64))) = {
     // stage 1
     1.000000000f, -0.000000000f,
 
@@ -2073,7 +2073,7 @@ const float twiddles_128[] __attribute__((aligned(64))) = {
 // N = 2048
 // =============================
 
- const float twiddles_2048[] __attribute__((aligned(64))) = {
+ const float twiddles_r2_2048[] __attribute__((aligned(64))) = {
     // stage 1
     1.000000000f, -0.000000000f,
 
@@ -4162,7 +4162,7 @@ const float twiddles_128[] __attribute__((aligned(64))) = {
  const int log2_2048 = 11;
 
 
- inline void get_twiddle(
+ inline void get_twiddle_r2(
     int N,
     const float** table,
     const int** offsets,
@@ -4171,27 +4171,27 @@ const float twiddles_128[] __attribute__((aligned(64))) = {
     switch (N)
     {
         case 128:
-            *table = twiddles_128;
+            *table = twiddles_r2_128;
             *offsets = tw_offsets_128;
             *log2N = log2_128;
             break;
         case 256:
-            *table = twiddles_256;
+            *table = twiddles_r2_256;
             *offsets = tw_offsets_256;
             *log2N = log2_256;
             break;
         case 512:
-            *table = twiddles_512;
+            *table = twiddles_r2_512;
             *offsets = tw_offsets_512;
             *log2N = log2_512;
             break;
         case 1024:
-            *table = twiddles_1024;
+            *table = twiddles_r2_1024;
             *offsets = tw_offsets_1024;
             *log2N = log2_1024;
             break;
         case 2048:
-            *table = twiddles_2048;
+            *table = twiddles_r2_2048;
             *offsets = tw_offsets_2048;
             *log2N = log2_2048;
             break;
