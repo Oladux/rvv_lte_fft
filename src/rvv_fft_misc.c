@@ -2,7 +2,7 @@
 #include "../include/tables/bitrev.h"
 
 inline void prepare_fft_vector(float *Rvec, float *Ivec, float *vec, int N) {
- //   bit_reverse(Rvec, Ivec, N);
+   // bit_reverse(Rvec, Ivec, N);
     interleave(Rvec, Ivec, vec, N);
 }
 
@@ -22,23 +22,27 @@ inline void interleave(float *re, float *im, float *data, int N) {
         i += vl;
     }
 }
-inline void bit_reverse(float *re, float *im, int N) {
+inline void bit_reverse(float *vec, int N) {
     int count;
-    float tmp_r;
-    float tmp_i;
     const int* bitrev = get_bitrev_table(N, &count);
-    
-    for (int i = 0; i < N; i++) {
+
+    for (int i = 0; i < N; i++)
+    {
         int j = bitrev[i];
-    
-        if (i < j) {
-            tmp_r = re[i];
-            re[i] = re[j];
-            re[j] = tmp_r;
-            
-            tmp_i = im[i];
-            im[i] = im[j];
-            im[j] = tmp_i;
+
+        if (i < j)
+        {
+            int i2 = 2 * i;
+            int j2 = 2 * j;
+
+            float tmp_r = vec[i2];
+            float tmp_i = vec[i2 + 1];
+
+            vec[i2]     = vec[j2];
+            vec[i2 + 1] = vec[j2 + 1];
+
+            vec[j2]     = tmp_r;
+            vec[j2 + 1] = tmp_i;
         }
     }
 }
