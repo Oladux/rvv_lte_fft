@@ -1,6 +1,8 @@
 #include "../include/rvv_fft_misc.h"
 #include "../include/tables/bitrev.h"
 
+#include <math.h>
+
 inline void prepare_fft_vector(float *Rvec, float *Ivec, float *vec, int N) {
    // bit_reverse(Rvec, Ivec, N);
     interleave(Rvec, Ivec, vec, N);

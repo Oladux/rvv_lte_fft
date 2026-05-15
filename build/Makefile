@@ -19,6 +19,7 @@ DIRS = $(OBJDIR) $(OBJDIR)/tables $(LIBDIR)
 LIB_SOURCES = $(SRCDIR)/rvv_fft.c \
               $(SRCDIR)/rvv_fft_misc.c \
               $(TABLESDIR)/twiddles_radix2.c \
+			  $(TABLESDIR)/twiddles_radix3.c \
 			  $(TABLESDIR)/twiddles_radix4.c \
               $(TABLESDIR)/bitrev.c
 
@@ -26,6 +27,7 @@ LIB_SOURCES = $(SRCDIR)/rvv_fft.c \
 LIB_OBJECTS = $(OBJDIR)/rvv_fft.o \
               $(OBJDIR)/rvv_fft_misc.o \
               $(OBJDIR)/tables/twiddles_radix2.o \
+			  $(OBJDIR)/tables/twiddles_radix3.o \
 			  $(OBJDIR)/tables/twiddles_radix4.o \
               $(OBJDIR)/tables/bitrev.o
 

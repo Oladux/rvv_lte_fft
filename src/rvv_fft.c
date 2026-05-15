@@ -62,10 +62,29 @@ static inline void store_data(
         __riscv_vcreate_v_f32m1x2(x2r, x2i), vl);
 }
 
+/* Загружает третий вектор (pc[j]) без указателя pb */
+static inline void load_one(
+    const float* restrict pc, int j, size_t vl,
+    vfloat32m1_t* rc, vfloat32m1_t* ic)
+{
+    vfloat32m1x2_t vc = __riscv_vlseg2e32_v_f32m1x2(pc + 2*j, vl);
+    *rc = __riscv_vget_v_f32m1x2_f32m1(vc, 0);
+    *ic = __riscv_vget_v_f32m1x2_f32m1(vc, 1);
+}
+ 
+static inline void store_one(
+    float* restrict pc, int j,
+    vfloat32m1_t xr, vfloat32m1_t xi, size_t vl)
+{
+    __riscv_vsseg2e32_v_f32m1x2(pc + 2*j,
+        __riscv_vcreate_v_f32m1x2(xr, xi), vl);
+}
+
+
 /* ---------------------------------------------------------------------------
- * load_twiddles_stream  —  последовательная загрузка twiddle-факторов
+ * load_twiddles_stream_r2  —  последовательная загрузка twiddle-факторов
  * --------------------------------------------------------------------------*/
-static inline void load_twiddles_stream(
+static inline void load_twiddles_stream_r2(
     const float* restrict *tw_cursor,
     size_t       vl,
     vfloat32m1_t* rw, vfloat32m1_t* iw)
@@ -76,33 +95,48 @@ static inline void load_twiddles_stream(
     *tw_cursor += 2 * vl;
 }
 
+static inline void load_twiddles_stream_r3(
+    const float* restrict *tw_cursor,
+    size_t vl,
+    vfloat32m1_t* w1r, vfloat32m1_t* w1i,
+    vfloat32m1_t* w2r, vfloat32m1_t* w2i)
+{
+    vfloat32m1x4_t tw = __riscv_vlseg4e32_v_f32m1x4(*tw_cursor, vl);
+
+    *w1r = __riscv_vget_v_f32m1x4_f32m1(tw, 0);
+    *w1i = __riscv_vget_v_f32m1x4_f32m1(tw, 1);
+
+    *w2r = __riscv_vget_v_f32m1x4_f32m1(tw, 2);
+    *w2i = __riscv_vget_v_f32m1x4_f32m1(tw, 3);
+
+    *tw_cursor += 4 * vl;
+}
+
 /* ---------------------------------------------------------------------------
  * load_twiddles_r4
  *   Загружает W1, W2, W3 для позиций j..j+vl-1.
  *   Формат блока таблицы: [W1[0..Q-1], W2[0..Q-1], W3[0..Q-1]]
  *   Тот же формат и те же значения что у DIT r4.
  * --------------------------------------------------------------------------*/
-static inline void load_twiddles_r4(
-    const float* restrict tw_base,
-    int   j, int quarter, size_t vl,
+static inline void load_twiddles_stream_r4(
+    const float* restrict *tw_cursor,
+    size_t vl,
     vfloat32m1_t* w1r, vfloat32m1_t* w1i,
     vfloat32m1_t* w2r, vfloat32m1_t* w2i,
     vfloat32m1_t* w3r, vfloat32m1_t* w3i)
 {
-    const float* p1 = tw_base + 2 * j;
-    const float* p2 = tw_base + 2 * (quarter + j);
-    const float* p3 = tw_base + 2 * (2*quarter + j);
+    vfloat32m1x6_t tw = __riscv_vlseg6e32_v_f32m1x6(*tw_cursor, vl);
 
-    vfloat32m1x2_t t1 = __riscv_vlseg2e32_v_f32m1x2(p1, vl);
-    vfloat32m1x2_t t2 = __riscv_vlseg2e32_v_f32m1x2(p2, vl);
-    vfloat32m1x2_t t3 = __riscv_vlseg2e32_v_f32m1x2(p3, vl);
+    *w1r = __riscv_vget_v_f32m1x6_f32m1(tw, 0);
+    *w1i = __riscv_vget_v_f32m1x6_f32m1(tw, 1);
 
-    *w1r = __riscv_vget_v_f32m1x2_f32m1(t1, 0);
-    *w1i = __riscv_vget_v_f32m1x2_f32m1(t1, 1);
-    *w2r = __riscv_vget_v_f32m1x2_f32m1(t2, 0);
-    *w2i = __riscv_vget_v_f32m1x2_f32m1(t2, 1);
-    *w3r = __riscv_vget_v_f32m1x2_f32m1(t3, 0);
-    *w3i = __riscv_vget_v_f32m1x2_f32m1(t3, 1);
+    *w2r = __riscv_vget_v_f32m1x6_f32m1(tw, 2);
+    *w2i = __riscv_vget_v_f32m1x6_f32m1(tw, 3);
+
+    *w3r = __riscv_vget_v_f32m1x6_f32m1(tw, 4);
+    *w3i = __riscv_vget_v_f32m1x6_f32m1(tw, 5);
+
+    *tw_cursor += 6 * vl;
 }
 
 /* ---------------------------------------------------------------------------
@@ -114,10 +148,15 @@ static inline void cmul(
     vfloat32m1_t* outr, vfloat32m1_t* outi,
     size_t vl)
 {
-    *outr = __riscv_vfmul_vv_f32m1(ar, br, vl);
-    *outr = __riscv_vfnmsac_vv_f32m1(*outr, ai, bi, vl);
-    *outi = __riscv_vfmul_vv_f32m1(ai, br, vl);
-    *outi = __riscv_vfmacc_vv_f32m1(*outi, ar, bi, vl);
+    // независимые mul → можно выполнять параллельно
+    vfloat32m1_t arbr = __riscv_vfmul_vv_f32m1(ar, br, vl);
+    vfloat32m1_t aibi = __riscv_vfmul_vv_f32m1(ai, bi, vl);
+    vfloat32m1_t aibr = __riscv_vfmul_vv_f32m1(ai, br, vl);
+    vfloat32m1_t arbi = __riscv_vfmul_vv_f32m1(ar, bi, vl);
+
+    // теперь короткие цепочки
+    *outr = __riscv_vfsub_vv_f32m1(arbr, aibi, vl);
+    *outi = __riscv_vfadd_vv_f32m1(aibr, arbi, vl);
 }
 
 /* ---------------------------------------------------------------------------
@@ -192,6 +231,53 @@ static inline void butterfly_r4_dif(
     cmul(s2r, s2i, w3r, w3i, y3r, y3i, vl);
 }
 
+static inline void butterfly_r3_dif(
+    vfloat32m1_t a0r, vfloat32m1_t a0i,
+    vfloat32m1_t a1r, vfloat32m1_t a1i,
+    vfloat32m1_t a2r, vfloat32m1_t a2i,
+    vfloat32m1_t w1r, vfloat32m1_t w1i,   /* W1[k] = exp(-2πik/N) */
+    vfloat32m1_t w2r, vfloat32m1_t w2i,   /* W2[k] = exp(-4πik/N) */
+    vfloat32m1_t* y0r, vfloat32m1_t* y0i, /* → third 0 (pa) */
+    vfloat32m1_t* y1r, vfloat32m1_t* y1i, /* → third 1 (pb) */
+    vfloat32m1_t* y2r, vfloat32m1_t* y2i, /* → third 2 (pc) */
+    size_t vl)
+{
+    /* p = a1+a2,  q = a1-a2 */
+    vfloat32m1_t pr = __riscv_vfadd_vv_f32m1(a1r, a2r, vl);
+    vfloat32m1_t pi = __riscv_vfadd_vv_f32m1(a1i, a2i, vl);
+    vfloat32m1_t qr = __riscv_vfsub_vv_f32m1(a1r, a2r, vl);
+    vfloat32m1_t qi = __riscv_vfsub_vv_f32m1(a1i, a2i, vl);
+ 
+    /* y0 = a0 + p */
+    *y0r = __riscv_vfadd_vv_f32m1(a0r, pr, vl);
+    *y0i = __riscv_vfadd_vv_f32m1(a0i, pi, vl);
+ 
+    /* base_r = a0r - pr*0.5,  base_i = a0i - pi*0.5 */
+    vfloat32m1_t half_pr = __riscv_vfmul_vf_f32m1(pr, 0.5f, vl);
+    vfloat32m1_t half_pi = __riscv_vfmul_vf_f32m1(pi, 0.5f, vl);
+
+    vfloat32m1_t base_r = __riscv_vfsub_vv_f32m1(a0r, half_pr, vl);
+    vfloat32m1_t base_i = __riscv_vfsub_vv_f32m1(a0i, half_pi, vl);
+
+    /* sq_qi = qi*√3/2,  sq_qr = qr*√3/2 */
+    vfloat32m1_t sq_qi = __riscv_vfmul_vf_f32m1(qi, SQRT3_OVER_2, vl);
+    vfloat32m1_t sq_qr = __riscv_vfmul_vf_f32m1(qr, SQRT3_OVER_2, vl);
+ 
+    /* t1 = (base_r + sq_qi) + i*(base_i - sq_qr) */
+    vfloat32m1_t t1r = __riscv_vfadd_vv_f32m1(base_r, sq_qi, vl);
+    vfloat32m1_t t1i = __riscv_vfsub_vv_f32m1(base_i, sq_qr, vl);
+ 
+    /* t2 = (base_r - sq_qi) + i*(base_i + sq_qr)
+     *     = t1r - 2*sq_qi,  t1i + 2*sq_qr  (экономия двух операций) */
+    vfloat32m1_t t2r = __riscv_vfnmsac_vf_f32m1(t1r, 2.0f, sq_qi, vl);
+    vfloat32m1_t t2i = __riscv_vfmacc_vf_f32m1 (t1i, 2.0f, sq_qr, vl);
+ 
+    /* y1 = t1·W1,  y2 = t2·W2 */
+    cmul(t1r, t1i, w1r, w1i, y1r, y1i, vl);
+    cmul(t2r, t2i, w2r, w2i, y2r, y2i, vl);
+}
+
+
 /* ---------------------------------------------------------------------------
  * butterfly_core_dif  —  DIF radix-2 butterfly
  *   x1 = a + b           (сумма, нет twiddle)
@@ -248,6 +334,8 @@ static void r4_stage(
         const float* pc = base + 4 * quarter;
         const float* pd = base + 6 * quarter;
 
+        const float* tw_cursor = tw_base;
+
         float* sa = base;
         float* sb = base + 2 * quarter;
         float* sc = base + 4 * quarter;
@@ -270,7 +358,7 @@ static void r4_stage(
             /* Prolog: загрузить j=0 */
             load_data(pa, pb, j, vl, &a0r,&a0i, &a1r,&a1i);
             load_data(pc, pd, j, vl, &a2r,&a2i, &a3r,&a3i);
-            load_twiddles_r4(tw_base, j, quarter, vl,
+            load_twiddles_stream_r4(&tw_cursor, vl,
                              &w1r,&w1i, &w2r,&w2i, &w3r,&w3i);
 
             j += (int)vl;
@@ -284,7 +372,7 @@ static void r4_stage(
                 /* Загружаем следующий блок */
                 load_data(pa, pb, j, vl, &na0r,&na0i, &na1r,&na1i);
                 load_data(pc, pd, j, vl, &na2r,&na2i, &na3r,&na3i);
-                load_twiddles_r4(tw_base, j, quarter, vl,
+                load_twiddles_stream_r4(&tw_cursor, vl,
                                  &nw1r,&nw1i, &nw2r,&nw2i, &nw3r,&nw3i);
 
                 /* Вычисляем и сохраняем текущий блок */
@@ -330,7 +418,7 @@ static void r4_stage(
             load_data(pc, pd, j, vl, &a2r,&a2i, &a3r,&a3i);
 
             vfloat32m1_t w1r,w1i, w2r,w2i, w3r,w3i;
-            load_twiddles_r4(tw_base, j, quarter, vl,
+            load_twiddles_stream_r4(&tw_cursor, vl,
                              &w1r,&w1i, &w2r,&w2i, &w3r,&w3i);
 
             vfloat32m1_t y0r,y0i, y1r,y1i, y2r,y2i, y3r,y3i;
@@ -355,7 +443,7 @@ static void r4_stage(
             load_data(pc, pd, j, vl, &a2r,&a2i, &a3r,&a3i);
 
             vfloat32m1_t w1r,w1i, w2r,w2i, w3r,w3i;
-            load_twiddles_r4(tw_base, j, quarter, vl,
+            load_twiddles_stream_r4(&tw_cursor, vl,
                              &w1r,&w1i, &w2r,&w2i, &w3r,&w3i);
 
             vfloat32m1_t y0r,y0i, y1r,y1i, y2r,y2i, y3r,y3i;
@@ -396,14 +484,14 @@ static void r2_stage(
             vfloat32m1_t ra,ia, rb,ib, rw,iw;
 
             load_data(pa, pb, j, vl, &ra,&ia, &rb,&ib);
-            load_twiddles_stream(&tw_cursor, vl, &rw, &iw);
+            load_twiddles_stream_r2(&tw_cursor, vl, &rw, &iw);
             j += (int)vl;
 
             for (; j + (int)vl <= grp_half; j += (int)vl)
             {
                 vfloat32m1_t ra_n,ia_n, rb_n,ib_n, rw_n,iw_n;
                 load_data(pa, pb, j, vl, &ra_n,&ia_n, &rb_n,&ib_n);
-                load_twiddles_stream(&tw_cursor, vl, &rw_n, &iw_n);
+                load_twiddles_stream_r2(&tw_cursor, vl, &rw_n, &iw_n);
 
                 vfloat32m1_t x1r,x1i, x2r,x2i;
                 butterfly_core_dif(ra,ia, rb,ib, rw,iw,
@@ -428,7 +516,7 @@ static void r2_stage(
             vfloat32m1_t ra,ia, rb,ib, rw,iw, x1r,x1i, x2r,x2i;
 
             load_data(pa, pb, j, vl, &ra,&ia, &rb,&ib);
-            load_twiddles_stream(&tw_cursor, vl, &rw, &iw);
+            load_twiddles_stream_r2(&tw_cursor, vl, &rw, &iw);
             butterfly_core_dif(ra,ia, rb,ib, rw,iw,
                                &x1r,&x1i, &x2r,&x2i, vl);
             store_data(pa, pb, j, x1r,x1i, x2r,x2i, vl);
@@ -441,7 +529,7 @@ static void r2_stage(
             vfloat32m1_t ra,ia, rb,ib, rw,iw, x1r,x1i, x2r,x2i;
 
             load_data(pa, pb, j, vl, &ra,&ia, &rb,&ib);
-            load_twiddles_stream(&tw_cursor, vl, &rw, &iw);
+            load_twiddles_stream_r2(&tw_cursor, vl, &rw, &iw);
             butterfly_core_dif(ra,ia, rb,ib, rw,iw,
                                &x1r,&x1i, &x2r,&x2i, vl);
             store_data(pa, pb, j, x1r,x1i, x2r,x2i, vl);
@@ -449,60 +537,207 @@ static void r2_stage(
     }
 }
 
-/* ===========================================================================
- * rvv_fft_dif
- * ===========================================================================*/
+static void r3_stage_1536(
+    float* restrict vec,
+    const float* restrict tw_r3,   /* twiddle-таблица: [W1[512], W2[512]] */
+    size_t vlmax)
+{
+    /* T = 512, поэтому:
+     *   pa → первая треть:   vec[0..511]     (float offset 0)
+     *   pb → вторая треть:   vec[512..1023]  (float offset 2*512 = 1024)
+     *   pc → третья треть:   vec[1024..1535] (float offset 4*512 = 2048) */
+    const int T = 512;
+ 
+    const float* restrict pa = vec;
+    const float* restrict pb = vec + 2*T;
+    const float* restrict pc = vec + 4*T;
+
+    float* restrict sa = vec;
+    float* restrict sb = vec + 2*T;
+    float* restrict sc = vec + 4*T;
+ 
+    const float* tw_cursor = tw_r3;
+ 
+    int j = 0;
+ 
+    /* ── PIPELINE ──────────────────────────────────────────────────────────*/
+    if (T >= 2 * (int)vlmax)
+    {
+        const size_t vl = vlmax;
+        vfloat32m1_t a0r,a0i, a1r,a1i, a2r,a2i;
+        vfloat32m1_t w1r,w1i, w2r,w2i;
+ 
+        /* Prolog */
+        load_data(pa, pb, j, vl, &a0r,&a0i, &a1r,&a1i);
+        load_one (pc, j, vl, &a2r,&a2i);
+        load_twiddles_stream_r3(&tw_cursor, vl, &w1r,&w1i, &w2r,&w2i);
+
+        j += (int)vl;
+ 
+        /* Kernel */
+        for (; j + (int)vl <= T; j += (int)vl)
+        {
+            vfloat32m1_t na0r,na0i, na1r,na1i, na2r,na2i;
+            vfloat32m1_t nw1r,nw1i, nw2r,nw2i;
+ 
+            load_data(pa, pb, j, vl, &na0r,&na0i, &na1r,&na1i);
+            load_one  (pc, j, vl, &na2r, &na2i);
+            load_twiddles_stream_r3(&tw_cursor, vl,
+                                   &nw1r,&nw1i, &nw2r,&nw2i);
+
+            vfloat32m1_t y0r,y0i, y1r,y1i, y2r,y2i;
+
+            butterfly_r3_dif(
+                a0r,a0i, a1r,a1i, a2r,a2i,
+                w1r,w1i, w2r,w2i,
+                &y0r,&y0i, &y1r,&y1i, &y2r,&y2i, vl);
+ 
+            store_data(sa, sb, j-(int)vl, y0r,y0i, y1r,y1i, vl);
+            store_one (sc, j-(int)vl, y2r, y2i, vl);
+ 
+            a0r=na0r; a0i=na0i; 
+            a1r=na1r; a1i=na1i; 
+            a2r=na2r; a2i=na2i;
+
+            w1r=nw1r; w1i=nw1i; 
+            w2r=nw2r; w2i=nw2i;
+        }
+ 
+        /* Drain */
+        {
+            vfloat32m1_t y0r,y0i, y1r,y1i, y2r,y2i;
+            butterfly_r3_dif(
+                a0r,a0i, a1r,a1i, a2r,a2i,
+                w1r,w1i, w2r,w2i,
+                &y0r,&y0i, &y1r,&y1i, &y2r,&y2i, vl);
+                
+            store_data(sa, sb, j-(int)vl, y0r,y0i, y1r,y1i, vl);
+            store_one (sc, j-(int)vl, y2r, y2i, vl);
+        }
+    }
+ 
+    /* ── NORMAL ────────────────────────────────────────────────────────────*/
+    for (; j + (int)vlmax <= T; j += (int)vlmax)
+    {
+        const size_t vl = vlmax;
+        vfloat32m1_t a0r,a0i, a1r,a1i, a2r,a2i, w1r,w1i, w2r,w2i;
+        vfloat32m1_t y0r,y0i, y1r,y1i, y2r,y2i;
+ 
+        load_data(pa, pb, j, vl, &a0r,&a0i, &a1r,&a1i);
+        load_one  (pc, j, vl, &a2r, &a2i);
+
+        load_twiddles_stream_r3(&tw_cursor, vl,
+                               &w1r,&w1i, &w2r,&w2i);
+
+        butterfly_r3_dif(
+            a0r,a0i, a1r,a1i, a2r,a2i,
+            w1r,w1i, w2r,w2i,
+            &y0r,&y0i, &y1r,&y1i, &y2r,&y2i, vl);
+
+        store_data(sa, sb, j, y0r,y0i, y1r,y1i, vl);
+        store_one (sc, j, y2r, y2i, vl);
+    }
+ 
+    /* ── TAIL ──────────────────────────────────────────────────────────────*/
+    if (j < T)
+    {
+        const size_t vl = __riscv_vsetvl_e32m1((size_t)(T - j));
+        vfloat32m1_t a0r,a0i, a1r,a1i, a2r,a2i, w1r,w1i, w2r,w2i;
+        vfloat32m1_t y0r,y0i, y1r,y1i, y2r,y2i;
+ 
+        load_data(pa, pb, j, vl, &a0r,&a0i, &a1r,&a1i);
+        load_one  (pc, j, vl, &a2r, &a2i);
+
+        load_twiddles_stream_r3(&tw_cursor, vl,
+                               &w1r,&w1i, &w2r,&w2i);
+
+        butterfly_r3_dif(
+            a0r,a0i, a1r,a1i, a2r,a2i,
+            w1r,w1i, w2r,w2i,
+            &y0r,&y0i, &y1r,&y1i, &y2r,&y2i, vl);
+        store_data(sa, sb, j, y0r,y0i, y1r,y1i, vl);
+        store_one (sc, j, y2r, y2i, vl);
+    }
+}
+
+
+
 float* rvv_fft(float* restrict vec, int N)
 {
     const size_t vlmax = __riscv_vsetvlmax_e32m1();
+ 
+    /* ── Специальный путь для N=1536 ────────────────────────────────────────
+     *
+     * N=1536 = 3×2⁹: не степень двойки, поэтому r4/r2-таблицы неприменимы.
+     * Структура:
+     *   1. r3_stage_1536 — одна r3 DIF стадия (G=1536, T=512)
+     *   2. Три независимых r2-каскада по 9 стадий на блоках [0..511],
+     *      [512..1023], [1024..1535] — используют стандартные r2-таблицы
+     *      для N=512 (get_twiddle вызывается с N=512).
+     *   3. bit_reverse_permutation_1536 — специализированная перестановка
+     *      для N=1536 (цикловый метод, 10 циклов, без дополнительной памяти).
+     * ────────────────────────────────────────────────────────────────────── */
+    if (N == 1536)
+    {
+        const int T = 512;
+        const float* tw_r3;
+        get_twiddle_r3(&tw_r3);   /* возвращает [W1[512],W2[512]] */
+ 
 
+        r3_stage_1536(vec, tw_r3, vlmax);
+ 
+        /* 9 стадий r2 на каждом из трёх блоков по T=512 */
+        int log2T;
+        const float* tw2;
+        const int*   off2;
+        get_twiddle_r2(T, &tw2, &off2, &log2T);   /* log2T = 9 */
+ 
+        for (int blk = 0; blk < 3; blk++)
+        {
+            float* blk_base = vec + 2 * blk * T;
+ 
+            /* DIF: стадии от log2T вниз до 1 */
+            for (int stage = log2T; stage >= 1; stage--)
+            {
+                const int grp_size = 1 << stage;
+                const float* tw_stage = tw2 + 2 * off2[stage - 1];
+ 
+                /* r2_stage с N=T (блок 0..T-1 трактуется как самостоятельный
+                 * T-элементный массив; передаём blk_base вместо vec) */
+                r2_stage(blk_base, T, grp_size, tw_stage, vlmax);
+            }
+        }
+ 
+        bit_reverse(vec, N);
+        return vec;
+    }
+ 
+    /* ── Стандартный путь: N = степень двойки ───────────────────────────────*/
     int log2N;
     const float* tw2;
     const int*   off2;
     get_twiddle_r2(N, &tw2, &off2, &log2N);
-
+ 
     const float* tw4;
     const int*   off4;
     int          stages_r4;
     get_twiddle_r4(N, &tw4, &off4, &stages_r4);
-
-    /* =========================================================================
-     * Если log2N нечётный: одна r2-стадия ПЕРВОЙ (grp_size = N).
-     *
-     * Почему первой: в DIF стадии идут от крупных групп к мелким.
-     * При нечётном log2N вершина дерева — r2, всё остальное — r4.
-     * tw_offsets[log2N-1] указывает на W[0..N/2−1] для grp_size=N.
-     * ========================================================================*/
+ 
+    /* log2N нечётный → одна r2-стадия поверх r4-каскада */
     if (log2N & 1)
     {
         const float* tw_stage = tw2 + 2 * off2[log2N - 1];
         r2_stage(vec, N, N, tw_stage, vlmax);
     }
-
-    /* =========================================================================
-     * Radix-4 стадии: от наибольшего grp_size к наименьшему.
-     *
-     * В DIT-таблице r4_idx=0 → grp_size=4, r4_idx=stages_r4-1 → наибольший.
-     * DIF обходит в обратном порядке: stages_r4-1 → 0.
-     *
-     * Для каждого r4_idx:
-     *   grp_size = 1 << (2 + 2*r4_idx)
-     *   tw_base  = tw4 + 2*off4[r4_idx]   (тот же блок что и в DIT)
-     * ========================================================================*/
+ 
+    /* r4-стадии от наибольшего grp_size к наименьшему */
     for (int r4_idx = stages_r4 - 1; r4_idx >= 0; r4_idx--)
     {
-        const int   grp_size = 1 << (2 + 2*r4_idx);
-        const float* tw_base = tw4 + 2 * off4[r4_idx];
-
+        const int    grp_size = 1 << (2 + 2*r4_idx);
+        const float* tw_base  = tw4 + 2 * off4[r4_idx];
         r4_stage(vec, N, grp_size, tw_base, vlmax);
     }
-
-    /* =========================================================================
-     * Bit-reversal на выходе.
-     * DIF оставляет результат в bit-reversed порядке.
-     * bit_reverse_permutation выполняет in-place перестановку за O(N).
-     * ========================================================================*/
+ 
     bit_reverse(vec, N);
-
     return vec;
 }
