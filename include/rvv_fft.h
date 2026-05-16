@@ -20,6 +20,6 @@
 #include "tables/twiddles_radix4.h"
 #include "tables/bitrev.h"
 
-float* rvv_fft(float* vec, int N);
+float* ofdm_fft(float* vec, int N);
 
 #endif
