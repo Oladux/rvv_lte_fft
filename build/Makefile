@@ -72,8 +72,8 @@ LIB_OBJECTS = $(OBJDIR)/rvv_fft.o \
 
 LIBRARY = $(LIBDIR)/librvv_fft.a
 
-TEST_SOURCE = $(TESTDIR)/test_suite.c
-TEST_TARGET = test_suite
+TEST_SOURCE = $(TESTDIR)/rvv_test_fft.c
+TEST_TARGET = rvv_test_fft
 
 all: $(DIRS) $(LIBRARY) $(TEST_TARGET)
 
