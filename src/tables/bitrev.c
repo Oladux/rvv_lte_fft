@@ -1,9 +1,6 @@
-#ifndef BITREV_C
-#define BITREV_C
+#include "../include/rvv_fft.h"
 
-#include <stddef.h>
-
-const int bitrev_128[] = {
+const int32_t bitrev_128[] = {
     0, 64, 32, 96, 16, 80, 48, 112, 8, 72, 40, 104, 
     24, 88, 56, 120, 4, 68, 36, 100, 20, 84, 52, 116, 
     12, 76, 44, 108, 28, 92, 60, 124, 2, 66, 34, 98, 
@@ -23,7 +20,7 @@ const int bitrev_128[] = {
 const size_t bitrev_count_128 = 128;
 
 
-const int bitrev_256[] = {
+const int32_t bitrev_256[] = {
     0, 128, 64, 192, 32, 160, 96, 224, 16, 144, 80, 208, 
     48, 176, 112, 240, 8, 136, 72, 200, 40, 168, 104, 232, 
     24, 152, 88, 216, 56, 184, 120, 248, 4, 132, 68, 196, 
@@ -54,7 +51,7 @@ const int bitrev_256[] = {
 const size_t bitrev_count_256 = 256;
 
 
-const int bitrev_512[] = {
+const int32_t bitrev_512[] = {
     0, 256, 128, 384, 64, 320, 192, 448, 32, 288, 160, 416, 
     96, 352, 224, 480, 16, 272, 144, 400, 80, 336, 208, 464, 
     48, 304, 176, 432, 112, 368, 240, 496, 8, 264, 136, 392, 
@@ -105,7 +102,7 @@ const int bitrev_512[] = {
 //   Memory usage: 2048 bytes
 const size_t bitrev_count_512 = 512;
 
-const int bitrev_1024[] = {
+const int32_t bitrev_1024[] = {
     0, 512, 256, 768, 128, 640, 384, 896, 64, 576, 320, 832, 
     192, 704, 448, 960, 32, 544, 288, 800, 160, 672, 416, 928, 
     96, 608, 352, 864, 224, 736, 480, 992, 16, 528, 272, 784, 
@@ -200,7 +197,7 @@ const int bitrev_1024[] = {
 const size_t bitrev_count_1024 = 1024;
 
 
-const int bitrev_1536[] = {
+const int32_t bitrev_1536[] = {
         1,768,4,192,18,432,81,828,364,327,1359,1457,851,1216,20,240,90,540,
         337,831,1516,335,1455,1475,1175,1400,185,942,706,403,1209,944,82,444,
         369,855,1408,11,1248,44,312,171,1278,764,379,1335,1421,1067,1274,572,
@@ -308,7 +305,7 @@ const int bitrev_1536[] = {
 const size_t bitrev_count_1536 = 1536;
 
 
-const int bitrev_2048[] = {
+const int32_t bitrev_2048[] = {
     0, 1024, 512, 1536, 256, 1280, 768, 1792, 128, 1152, 640, 1664, 
     384, 1408, 896, 1920, 64, 1088, 576, 1600, 320, 1344, 832, 1856, 
     192, 1216, 704, 1728, 448, 1472, 960, 1984, 32, 1056, 544, 1568, 
@@ -487,7 +484,7 @@ const int bitrev_2048[] = {
 //   Memory usage: 8192 bytes
 const size_t bitrev_count_2048 = 2048;
 
-const int* get_bitrev_table(int N, int* count)
+const int32_t* get_bitrev_table(int32_t N, int32_t* count)
 {
     switch(N) {
         case 128: *count = bitrev_count_128; return bitrev_128;
@@ -501,14 +498,13 @@ const int* get_bitrev_table(int N, int* count)
 }
 
 // Fallback function for sizes not in table
-static inline int bit_reverse_on_the_fly(int x, int log2n)
+static int32_t bit_reverse_on_the_fly(int32_t x, int32_t log2n)
 {
-    int result = 0;
-    for(int i = 0; i < log2n; i++) {
+    int32_t result = 0;
+    for(int32_t i = 0; i < log2n; i++) {
         result = (result << 1) | (x & 1);
         x >>= 1;
     }
     return result;
 }
 
-#endif

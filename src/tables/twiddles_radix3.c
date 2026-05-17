@@ -1,7 +1,4 @@
-#ifndef TWIDDLES3_C
-#define TWIDDLES3_C
-
-#include "../include/tables/twiddles_radix3.h"
+#include "../include/rvv_fft.h"
 
 const float twiddles_1536[] = {
     1.0000000000f, -0.0000000000f, 0.9999916553f, -0.0040906039f, 0.9999665618f, -0.0081811398f, 0.9999247193f, -0.0122715384f,
@@ -392,9 +389,8 @@ const float twiddles_1536[] = {
 
 const size_t twiddles_count_1536 = 1536;
 
-inline void get_twiddle_r3(const float** table){
+void get_twiddle_r3(const float** table){
     *table = twiddles_1536;
 }
 
 
-#endif 

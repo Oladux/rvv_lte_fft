@@ -1,5 +1,4 @@
 #include "../include/rvv_fft.h"
-#include "../include/rvv_fft_misc.h"
 
 
 int fft_test(){

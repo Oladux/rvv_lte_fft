@@ -10,16 +10,43 @@
 #endif
 
 #include <stddef.h>
-#include <riscv_vector.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
+
+#include <riscv_vector.h>
+
+#include "butterflies/butterfly_r2.h"
+#include "butterflies/butterfly_r3.h"
+#include "butterflies/butterfly_r4.h"
+
+#include "misc/twiddles/load_twiddle_r2.h"
+#include "misc/twiddles/load_twiddle_r3.h"
+#include "misc/twiddles/load_twiddle_r4.h"
+
+#include "misc/loads/load1.h"
+#include "misc/loads/load2.h"
+
+#include "misc/stores/store1.h"
+#include "misc/stores/store2.h"
+
+#include "misc/utils/rvv_fft_utils.h"
+
 #include "tables/twiddles_radix2.h"
 #include "tables/twiddles_radix3.h"
 #include "tables/twiddles_radix4.h"
 #include "tables/bitrev.h"
 
-float* ofdm_fft(float* vec, int N);
+#include "misc/utils/rvv_fft_utils.h"
+
+#include "stages/stages_r2.h"
+#include "stages/stages_r3.h"
+#include "stages/stages_r4.h"
+
+
+
+extern float* ofdm_fft(float* vec, int32_t N);
 
 #endif

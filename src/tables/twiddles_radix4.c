@@ -1,14 +1,4 @@
-#ifndef TWIDDLES4_C
-#define TWIDDLES4_C
-
-#include <stddef.h>
-#include "../include/tables/twiddles_radix4.h"
-
-// =============================
-// N = 128 (radix-4)
-// =============================
-
-#include <stddef.h>
+#include "../include/rvv_fft.h"
 
 // =============================
 // N = 128 (radix-4 INTERLEAVED)
@@ -44,13 +34,13 @@
 
 };
 
- const int tw_offsets_r4_128[] = {
+ const size_t tw_offsets_r4_128[] = {
     0,
     3,
     15,
 };
 
- const int stages_r4_128 = 3;
+ const size_t stages_r4_128 = 3;
 
 // =============================
 // N = 256 (radix-4 INTERLEAVED)
@@ -152,14 +142,14 @@
 
 };
 
- const int tw_offsets_r4_256[] = {
+ const size_t tw_offsets_r4_256[] = {
     0,
     3,
     15,
     63,
 };
 
- const int stages_r4_256 = 4;
+ const size_t stages_r4_256 = 4;
 
 // =============================
 // N = 512 (radix-4 INTERLEAVED)
@@ -261,14 +251,14 @@
 
 };
 
- const int tw_offsets_r4_512[] = {
+ const size_t tw_offsets_r4_512[] = {
     0,
     3,
     15,
     63,
 };
 
- const int stages_r4_512 = 4;
+ const size_t stages_r4_512 = 4;
 
 // =============================
 // N = 1024 (radix-4 INTERLEAVED)
@@ -628,7 +618,7 @@
 
 };
 
- const int tw_offsets_r4_1024[] = {
+ const size_t tw_offsets_r4_1024[] = {
     0,
     3,
     15,
@@ -636,7 +626,7 @@
     255,
 };
 
- const int stages_r4_1024 = 5;
+ const size_t stages_r4_1024 = 5;
 
 // =============================
 // N = 2048 (radix-4 INTERLEAVED)
@@ -996,7 +986,7 @@
 
 };
 
- const int tw_offsets_r4_2048[] = {
+ const size_t tw_offsets_r4_2048[] = {
     0,
     3,
     15,
@@ -1004,13 +994,13 @@
     255,
 };
 
- const int stages_r4_2048 = 5;
+ const size_t stages_r4_2048 = 5;
 
- inline void get_twiddle_r4(
-    int N,
+void get_twiddle_r4(
+    int32_t N,
     const float** table,
-    const int** offsets,
-    int* stages)
+    const size_t** offsets,
+    size_t* stages)
 {
     switch (N)
     {
@@ -1047,4 +1037,3 @@
     }
 }
 
-#endif

@@ -1,8 +1,4 @@
-#ifndef TWIDDLES2_C
-#define TWIDDLES2_C
-
-#include <stddef.h>
-#include "../include/tables/twiddles_radix2.h"
+#include "../include/rvv_fft.h"
 // =============================
 // N = 128
 // =============================
@@ -151,7 +147,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
 
 };
 
- const int tw_offsets_128[] = {
+ const size_t tw_offsets_128[] = {
     0,
     1,
     3,
@@ -161,7 +157,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
     63,
 };
 
- const int log2_128 = 7;
+ const size_t log2_128 = 7;
 
 // =============================
 // N = 256
@@ -441,7 +437,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
 
 };
 
- const int tw_offsets_256[] = {
+ const size_t tw_offsets_256[] = {
     0,
     1,
     3,
@@ -452,7 +448,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
     127,
 };
 
- const int log2_256 = 8;
+ const size_t log2_256 = 8;
 
 // =============================
 // N = 512
@@ -990,7 +986,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
 
 };
 
- const int tw_offsets_512[] = {
+ const size_t tw_offsets_512[] = {
     0,
     1,
     3,
@@ -1002,7 +998,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
     255,
 };
 
- const int log2_512 = 9;
+ const size_t log2_512 = 9;
 
 // =============================
 // N = 1024
@@ -2054,7 +2050,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
 
 };
 
- const int tw_offsets_1024[] = {
+ const size_t tw_offsets_1024[] = {
     0,
     1,
     3,
@@ -2067,7 +2063,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
     511,
 };
 
- const int log2_1024 = 10;
+ const size_t log2_1024 = 10;
 
 // =============================
 // N = 2048
@@ -4145,7 +4141,7 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
 
 };
 
- const int tw_offsets_2048[] = {
+ const size_t tw_offsets_2048[] = {
     0,
     1,
     3,
@@ -4159,14 +4155,14 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
     1023,
 };
 
- const int log2_2048 = 11;
+ const size_t log2_2048 = 11;
 
 
- inline void get_twiddle_r2(
-    int N,
+void get_twiddle_r2(
+    int32_t N,
     const float** table,
-    const int** offsets,
-    int* log2N)
+    const size_t** offsets,
+    size_t* log2N)
 {
     switch (N)
     {
@@ -4202,4 +4198,3 @@ const float twiddles_r2_128[] __attribute__((aligned(64))) = {
             break;
     }
 }
-#endif 
