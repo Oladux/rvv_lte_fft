@@ -1,12 +1,14 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
+
+#include "string.h"
 
 /* ---------------------------------------------------------------------------
- * interleave — interleave two separate real and imag arrays into one array
+ * interleave - interleave two separate real and imag arrays into one array
  *
- *   re      real part source array — input
- *   im      imaginary part source array — input
- *   data    destination interleaved array (re, im, re, im, ...) — output
- *   N       number of complex elements — input
+ *   re      real part source array - input
+ *   im      imaginary part source array - input
+ *   data    destination interleaved array (re, im, re, im, ...) - output
+ *   N       number of complex elements - input
  * --------------------------------------------------------------------------*/
 void interleave(float *re, float *im, float *data, int32_t N) {
     int32_t i = 0;
@@ -26,10 +28,10 @@ void interleave(float *re, float *im, float *data, int32_t N) {
 }
 
 /* ---------------------------------------------------------------------------
- * bit_reverse — bit-reverse permutation for FFT output ordering
+ * bit_reverse - bit-reverse permutation for FFT output ordering
  *
- *   vec     interleaved complex data array (in-place) — input/output
- *   N       FFT size (power of two) — input
+ *   vec     interleaved complex data array (in-place) - input/output
+ *   N       FFT size (power of two) - input
  *
  *   Uses precomputed bit-reversal table from get_bitrev_table()
  *   Swaps elements only once (i < j condition prevents double swap)
@@ -60,24 +62,24 @@ void bit_reverse(float *vec, int32_t N) {
 }
 
 /* ---------------------------------------------------------------------------
- * prepare_fft_vector — prepare FFT input by interleaving real and imag arrays
+ * prepare_fft_vector - prepare FFT input by interleaving real and imag arrays
  *
- *   Rvec    real part source array — input
- *   Ivec    imaginary part source array — input
- *   vec     destination interleaved array (re, im, re, im, ...) — output
- *   N       number of complex elements — input
+ *   Rvec    real part source array - input
+ *   Ivec    imaginary part source array - input
+ *   vec     destination interleaved array (re, im, re, im, ...) - output
+ *   N       number of complex elements - input
  * --------------------------------------------------------------------------*/
 void prepare_fft_vector(float *Rvec, float *Ivec, float *vec, int32_t N) {
     interleave(Rvec, Ivec, vec, N);
 }
 
 /* ---------------------------------------------------------------------------
- * cpx_cmul — complex multiplication: out = (ar + i·ai) × (br + i·bi)
+ * cpx_cmul - complex multiplication: out = (ar + i·ai) × (br + i·bi)
  *
- *   ar, ai   first operand (real, imag) — input
- *   br, bi   second operand (real, imag) — input
- *   outr, outi result pointers (real, imag) — output
- *   vl       vector length — input
+ *   ar, ai   first operand (real, imag) - input
+ *   br, bi   second operand (real, imag) - input
+ *   outr, outi result pointers (real, imag) - output
+ *   vl       vector length - input
  * --------------------------------------------------------------------------*/
 void cpx_cmul(
     vfloat32m1_t ar, vfloat32m1_t ai,
@@ -92,5 +94,52 @@ void cpx_cmul(
 
     *outr = __riscv_vfsub_vv_f32m1(arbr, aibi, vl); 
     *outi = __riscv_vfadd_vv_f32m1(aibr, arbi, vl);
+}
+
+
+void reorder_1536(float* vec)
+{
+    float tmp[2 * 1536];
+
+    int32_t count;
+    const uint32_t* perm = get_bitrev_table(1536, &count);
+
+    for (uint32_t src = 0; src < 1536; src++)
+    {
+        uint32_t dst = perm[src];
+
+        tmp[2 * dst + 0] = vec[2 * src + 0];
+        tmp[2 * dst + 1] = vec[2 * src + 1];
+    }
+
+    memcpy(vec, tmp, sizeof(tmp));
+}
+
+/* ===========================================================================
+ * ofdm_scale - multiply every element of vec by a real scalar
+ *
+ *   vec    fft result vector - input
+ *   N      number of complex elements - input
+ *   scale  real multiplier - input
+ *
+ * ===========================================================================*/
+float* ofdm_scale(float* restrict vec, int32_t N, float scale)
+{
+    float* p         = vec;
+    int    remaining = 2 * N;   
+ 
+    while (remaining > 0)
+    {
+        size_t vl = __riscv_vsetvl_e32m1((size_t)remaining);
+ 
+        vfloat32m1_t v = __riscv_vle32_v_f32m1(p, vl);
+        v = __riscv_vfmul_vf_f32m1(v, scale, vl);
+        __riscv_vse32_v_f32m1(p, v, vl);
+ 
+        p         += (int)vl;
+        remaining -= (int)vl;
+    }
+ 
+    return vec;
 }
 

@@ -1,12 +1,12 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * r3_cpx_bfly — DIF radix-3 butterfly
+ * r3_cpx_bfly - DIF radix-3 butterfly
  *
- *   a0r..a2i   input thirds (real, imag) — input
- *   w1r..w2i   twiddle factors (real, imag) W1, W2 — input
- *   y0r..y2i   output thirds (real, imag) — output
- *   vl         vector length — input
+ *   a0r..a2i   input thirds (real, imag) - input
+ *   w1r..w2i   twiddle factors (real, imag) W1, W2 - input
+ *   y0r..y2i   output thirds (real, imag) - output
+ *   vl         vector length - input
  * --------------------------------------------------------------------------*/
 void r3_cpx_bfly(
     vfloat32m1_t a0r, vfloat32m1_t a0i,

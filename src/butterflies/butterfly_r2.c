@@ -1,14 +1,14 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * r2_cpx_bfly — DIF radix-2 butterfly
+ * r2_cpx_bfly - DIF radix-2 butterfly
  *
- *   ra, ia   first operand (real, imag) — input
- *   rb, ib   second operand (real, imag) — input
- *   rw, iw   twiddle factor W (real, imag) — input
- *   x1r, x1i sum result pointers (real, imag) — output
- *   x2r, x2i difference·W result pointers (real, imag) — output
- *   vl       vector length — input
+ *   ra, ia   first operand (real, imag) - input
+ *   rb, ib   second operand (real, imag) - input
+ *   rw, iw   twiddle factor W (real, imag) - input
+ *   x1r, x1i sum result pointers (real, imag) - output
+ *   x2r, x2i difference·W result pointers (real, imag) - output
+ *   vl       vector length - input
  * --------------------------------------------------------------------------*/
 void r2_cpx_bfly(
     vfloat32m1_t ra, vfloat32m1_t ia,

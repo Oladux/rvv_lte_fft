@@ -1,46 +1,62 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * r2_stage_h1 — specialized radix-2 stage for grp_size=2, H=1, W≡1
+ * r2_stage_h1 - specialized radix-2 stage for grp_size=2, H=1, W≡1
  *
- *   vec      data array — input/output
- *   N        full FFT size — input
+ *   vec      data array - input/output
+ *   N        full FFT size - input
  *
  *  In this case twiddle factors are not used
  * --------------------------------------------------------------------------*/
 void r2_stage_h1(float* restrict vec, int32_t N)
 {
-    float* p = vec;
     const size_t ngroups = N >> 1;
+    
+    float *pa = vec;
+    float *pb = vec + 2;
 
     for (int32_t i = 0; i < ngroups; )
     {
-        size_t vl = __riscv_vsetvl_e32m1((size_t)(ngroups - i));
+        size_t vl = __riscv_vsetvl_e32m1(ngroups - i);
 
-        vfloat32m1x4_t seg = __riscv_vlseg4e32_v_f32m1x4(p, vl); // segmented load of 4 vectors 
-        vfloat32m1_t ar = __riscv_vget_v_f32m1x4_f32m1(seg, 0);
-        vfloat32m1_t ai = __riscv_vget_v_f32m1x4_f32m1(seg, 1);
-        vfloat32m1_t br = __riscv_vget_v_f32m1x4_f32m1(seg, 2);
-        vfloat32m1_t bi = __riscv_vget_v_f32m1x4_f32m1(seg, 3);
 
-        vfloat32m1_t t0r = __riscv_vfadd_vv_f32m1(ar, br, vl); // t0 = a + b
-        vfloat32m1_t t0i = __riscv_vfadd_vv_f32m1(ai, bi, vl);
-        vfloat32m1_t t1r = __riscv_vfsub_vv_f32m1(ar, br, vl); // t1 = a - b
-        vfloat32m1_t t1i = __riscv_vfsub_vv_f32m1(ai, bi, vl);
+        vfloat32m1_t ar = __riscv_vle32_v_f32m1(pa + 0, vl); // segmented load of 4 vectors  
+        vfloat32m1_t ai = __riscv_vle32_v_f32m1(pa + 1, vl);
+        vfloat32m1_t br = __riscv_vle32_v_f32m1(pb + 0, vl);
+        vfloat32m1_t bi = __riscv_vle32_v_f32m1(pb + 1, vl); 
+  
 
-        __riscv_vsseg4e32_v_f32m1x4(p,
-            __riscv_vcreate_v_f32m1x4(t0r, t0i, t1r, t1i), vl); // segmented store of 4 vectors
+        ar = __riscv_vlse32_v_f32m1(pa + 0, 4 * sizeof(float), vl);
+        ai = __riscv_vlse32_v_f32m1(pa + 1, 4 * sizeof(float), vl);
 
-        p += 4 * vl;
+        br = __riscv_vlse32_v_f32m1(pb + 0, 4 * sizeof(float), vl);
+        bi = __riscv_vlse32_v_f32m1(pb + 1, 4 * sizeof(float), vl);
+
+        vfloat32m1_t sumr = __riscv_vfadd_vv_f32m1(ar, br, vl);
+        vfloat32m1_t sumi = __riscv_vfadd_vv_f32m1(ai, bi, vl);
+
+        vfloat32m1_t diffr = __riscv_vfsub_vv_f32m1(ar, br, vl);
+        vfloat32m1_t diffi = __riscv_vfsub_vv_f32m1(ai, bi, vl);
+
+        __riscv_vsse32_v_f32m1(pa + 0, 4 * sizeof(float), sumr, vl);  // segmented store of 4 vectors
+        __riscv_vsse32_v_f32m1(pa + 1, 4 * sizeof(float), sumi, vl);
+
+        __riscv_vsse32_v_f32m1(pb + 0, 4 * sizeof(float), diffr, vl);
+        __riscv_vsse32_v_f32m1(pb + 1, 4 * sizeof(float), diffi, vl);
+
+        pa += 4 * vl;
+        pb += 4 * vl;
+
         i += vl;
+
     }
 }
 
 /* ---------------------------------------------------------------------------
- * r2_stage_h2 — specialized radix-2 stage for grp_size=4, H=2, W[0]=1, W[1]=-i
+ * r2_stage_h2 - specialized radix-2 stage for grp_size=4, H=2, W[0]=1, W[1]=-i
  *
- *   vec      data array (in-place) — input/output
- *   N        full FFT size — input
+ *   vec      data array (in-place) - input/output
+ *   N        full FFT size - input
  *
  *   In this case twiddle factors are handled without multiplications
  * --------------------------------------------------------------------------*/
@@ -49,55 +65,81 @@ void r2_stage_h2(float* restrict vec, int32_t N)
     float* p = vec;
     const size_t ngroups = N >> 2;
 
+
+    float *p0 = vec + 0; /* a0 */
+    float *p1 = vec + 2; /* a1 */
+    float *p2 = vec + 4; /* b0 */
+    float *p3 = vec + 6; /* b1 */
+
+    const ptrdiff_t stride = 8 * sizeof(float);
+
     for (int32_t i = 0; i < ngroups; )
     {
-        size_t vl = __riscv_vsetvl_e32m1((size_t)(ngroups - i));
+        size_t vl = __riscv_vsetvl_e32m1(ngroups - i);
 
-        vfloat32m1x8_t seg = __riscv_vlseg8e32_v_f32m1x8(p, vl); // segmented load of 8 vectors
-        vfloat32m1_t a0r = __riscv_vget_v_f32m1x8_f32m1(seg, 0);
-        vfloat32m1_t a0i = __riscv_vget_v_f32m1x8_f32m1(seg, 1);
-        vfloat32m1_t a1r = __riscv_vget_v_f32m1x8_f32m1(seg, 2);
-        vfloat32m1_t a1i = __riscv_vget_v_f32m1x8_f32m1(seg, 3);
-        vfloat32m1_t b0r = __riscv_vget_v_f32m1x8_f32m1(seg, 4);
-        vfloat32m1_t b0i = __riscv_vget_v_f32m1x8_f32m1(seg, 5);
-        vfloat32m1_t b1r = __riscv_vget_v_f32m1x8_f32m1(seg, 6);
-        vfloat32m1_t b1i = __riscv_vget_v_f32m1x8_f32m1(seg, 7);
 
-        /* k=0, W=1 */ 
-        vfloat32m1_t t0r = __riscv_vfadd_vv_f32m1(a0r, b0r, vl); // t0 = a0 + b0,
-        vfloat32m1_t t0i = __riscv_vfadd_vv_f32m1(a0i, b0i, vl);
-        vfloat32m1_t t1r = __riscv_vfsub_vv_f32m1(a0r, b0r, vl); // t1 = a0 - b0 
-        vfloat32m1_t t1i = __riscv_vfsub_vv_f32m1(a0i, b0i, vl);
+        vfloat32m1_t a0r =  __riscv_vlse32_v_f32m1(p0 + 0, stride, vl); // segmented load of 8 vectors
+        vfloat32m1_t a0i = __riscv_vlse32_v_f32m1(p0 + 1, stride, vl);
 
-        /* k=1, W=-i */
-        vfloat32m1_t t2r = __riscv_vfadd_vv_f32m1(a1r, b1r, vl); // t2 = a1 + b1
-        vfloat32m1_t t2i = __riscv_vfadd_vv_f32m1(a1i, b1i, vl);
-        vfloat32m1_t dr   = __riscv_vfsub_vv_f32m1(a1r, b1r, vl); // d = a1 - b1
-        vfloat32m1_t di   = __riscv_vfsub_vv_f32m1(a1i, b1i, vl);
+        vfloat32m1_t a1r = __riscv_vlse32_v_f32m1(p1 + 0, stride, vl);
+        vfloat32m1_t a1i = __riscv_vlse32_v_f32m1(p1 + 1, stride, vl);
+
+        vfloat32m1_t b0r = __riscv_vlse32_v_f32m1(p2 + 0, stride, vl);
+        vfloat32m1_t b0i = __riscv_vlse32_v_f32m1(p2 + 1, stride, vl);
+
+        vfloat32m1_t b1r = __riscv_vlse32_v_f32m1(p3 + 0, stride, vl);
+        vfloat32m1_t b1i = __riscv_vlse32_v_f32m1(p3 + 1, stride, vl);
+
+
+        vfloat32m1_t y0r = __riscv_vfadd_vv_f32m1(a0r, b0r, vl);
+        vfloat32m1_t y0i = __riscv_vfadd_vv_f32m1(a0i, b0i, vl);
+
+        vfloat32m1_t y2r = __riscv_vfsub_vv_f32m1(a0r, b0r, vl);
+        vfloat32m1_t y2i = __riscv_vfsub_vv_f32m1(a0i, b0i, vl);
+
+        vfloat32m1_t y1r = __riscv_vfadd_vv_f32m1(a1r, b1r, vl);
+        vfloat32m1_t y1i = __riscv_vfadd_vv_f32m1(a1i, b1i, vl);
+
+        vfloat32m1_t dr =
+            __riscv_vfsub_vv_f32m1(a1r, b1r, vl);
+        vfloat32m1_t di =
+            __riscv_vfsub_vv_f32m1(a1i, b1i, vl);
        
-        vfloat32m1_t t3r = di;   // t3 = d·(-i) = (di, -dr) 
-        vfloat32m1_t t3i = __riscv_vfneg_v_f32m1(dr, vl);
+          vfloat32m1_t y3r = di;
+        vfloat32m1_t y3i =
+            __riscv_vfneg_v_f32m1(dr, vl);
 
-        __riscv_vsseg8e32_v_f32m1x8(p, // segmented store of 8 vectors
-            __riscv_vcreate_v_f32m1x8(
-            t0r, t0i, t2r, t2i,
-            t1r, t1i,
-            t3r, t3i), 
-            vl);
+        __riscv_vsse32_v_f32m1(p0 + 0, stride, y0r, vl);
+        __riscv_vsse32_v_f32m1(p0 + 1, stride, y0i, vl);
 
-        p += 8 * vl;
+        __riscv_vsse32_v_f32m1(p1 + 0, stride, y1r, vl);
+        __riscv_vsse32_v_f32m1(p1 + 1, stride, y1i, vl);
+
+        __riscv_vsse32_v_f32m1(p2 + 0, stride, y2r, vl);
+        __riscv_vsse32_v_f32m1(p2 + 1, stride, y2i, vl);
+
+        __riscv_vsse32_v_f32m1(p3 + 0, stride, y3r, vl);
+        __riscv_vsse32_v_f32m1(p3 + 1, stride, y3i, vl);
+
+        p0 += 8 * vl;
+        p1 += 8 * vl;
+        p2 += 8 * vl;
+        p3 += 8 * vl;
+
         i += vl;
+
+
     }
 }
 
 /* ===========================================================================
- * r2_stage — single radix-2 DIF stage with software pipeline
+ * r2_stage - single radix-2 DIF stage with software pipeline
  *
- *   vec       data array  — input/output
- *   N         full FFT size — input
- *   grp_size  group size for this stage — input
- *   tw_stage  twiddle table block for this stage — input
- *   vlmax     maximum vector length — input
+ *   vec       data array  - input/output
+ *   N         full FFT size - input
+ *   grp_size  group size for this stage - input
+ *   tw_stage  twiddle table block for this stage - input
+ *   vlmax     maximum vector length - input
  *
  *   Generic case 
  * ===========================================================================*/
@@ -204,7 +246,7 @@ void r2_stage(
                         &y0r, &y0i, &y1r, &y1i, 
                         vl);
 
-            cpx2v_store(sa, sb, j-vl, y0r,y0i, y1r, y1i, vl);
+            cpx2v_store(sa, sb, j, y0r,y0i, y1r, y1i, vl);
         }
 
         // tail for processing remaining elements

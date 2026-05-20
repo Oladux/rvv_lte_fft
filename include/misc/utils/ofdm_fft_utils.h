@@ -12,4 +12,8 @@ extern void cpx_cmul(
     size_t vl);
 
 
+extern void reorder_1536(float*);
+
+extern float* ofdm_scale(float* restrict, int32_t, float);
+
 #endif

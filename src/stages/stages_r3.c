@@ -1,19 +1,21 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ===========================================================================
- * r3_stage — single radix-3 DIF stage (for N=1536, third=512)
+ * r3_stage - single radix-3 DIF stage (for N=1536, third=512)
  *
- *   vec      data array — input/output
- *   tw_r3    twiddle table  — input
- *   vlmax    maximum vector length — input
+ *   vec      data array - input/output
+ *   tw_r3    twiddle table  - input
+ *   vlmax    maximum vector length - input
  *
  *   Generic case 
  * ===========================================================================*/
 void r3_stage(
     float* restrict vec,
-    const float* restrict tw_r3,   
+    const float* restrict tw1_r3,   
+    const float* restrict tw2_r3,   
     size_t vlmax)
 {
+
 
     const size_t third = 512;
  
@@ -21,11 +23,13 @@ void r3_stage(
     const float* restrict pb = vec + 2*third;
     const float* restrict pc = vec + 4*third;
 
-    const float* tw_cursor = tw_r3; // moving pointer to current position in twiddle table
+    const float* tw1_cursor = tw1_r3;
+    const float* tw2_cursor = tw2_r3; // moving pointer to current position in twiddle table
 
     float* restrict sa = vec;
     float* restrict sb = vec + 2*third;
     float* restrict sc = vec + 4*third;
+
 
     size_t j = 0;
  
@@ -36,7 +40,7 @@ void r3_stage(
         /* pipeline preload */
 
         const size_t vl = vlmax;
-
+        
         vfloat32m1_t a0r, a0i, // butterfly operands
                      a1r, a1i,
                      a2r, a2i;
@@ -47,7 +51,7 @@ void r3_stage(
         cpx2v_load(pa, pb, j, vl, &a0r,&a0i, &a1r,&a1i); // preload
         cpx1v_load (pc, j, vl, &a2r,&a2i);
 
-        r3_cpxt_load_stream(&tw_cursor, vl, &w1r,&w1i, &w2r,&w2i);
+        r3_cpxt_load_stream(&tw1_cursor, &tw2_cursor, vl, &w1r,&w1i, &w2r,&w2i);
 
         j += vl;
  
@@ -64,7 +68,7 @@ void r3_stage(
             cpx2v_load(pa, pb, j, vl, &na0r,&na0i, &na1r,&na1i); // load of next data block
             cpx1v_load  (pc, j, vl, &na2r, &na2i);
 
-            r3_cpxt_load_stream(&tw_cursor, vl, // load of next twiddles block
+            r3_cpxt_load_stream(&tw1_cursor, &tw2_cursor, vl, // load of next twiddles block
                                 &nw1r,&nw1i, 
                                 &nw2r,&nw2i);
 
@@ -121,7 +125,7 @@ void r3_stage(
         vfloat32m1_t w1r, w1i,
                      w2r, w2i;
 
-        r3_cpxt_load_stream(&tw_cursor, vl, &w1r, &w1i, &w2r, &w2i);
+        r3_cpxt_load_stream(&tw1_cursor, &tw2_cursor, vl, &w1r, &w1i, &w2r, &w2i);
 
         vfloat32m1_t y0r, y0i,
                         y1r, y1i,
@@ -152,7 +156,7 @@ void r3_stage(
             vfloat32m1_t w1r, w1i,
                          w2r, w2i;
 
-            r3_cpxt_load_stream(&tw_cursor, vl, &w1r, &w1i, &w2r, &w2i);
+            r3_cpxt_load_stream(&tw1_cursor, &tw2_cursor, vl, &w1r, &w1i, &w2r, &w2i);
 
             vfloat32m1_t y0r, y0i,
                          y1r, y1i,
@@ -166,4 +170,5 @@ void r3_stage(
             cpx2v_store(sa, sb, j, y0r, y0i, y1r, y1i, vl);
             cpx1v_store(sc, j, y2r, y2i, vl);
         }
+
 }

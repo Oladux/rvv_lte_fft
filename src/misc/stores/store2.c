@@ -1,13 +1,13 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * cpx2v_store — store of two interleaved complex vectors
+ * cpx2v_store - store of two interleaved complex vectors
  *
- *   pa, pb   destination pointers — input
- *   j        element offset within the group — input
- *   x1r, x1i first vector values (real, imag) — input
- *   x2r, x2i second vector values (real, imag) — input
- *   vl       vector length — input
+ *   pa, pb   destination pointers - input
+ *   j        element offset within the group - input
+ *   x1r, x1i first vector values (real, imag) - input
+ *   x2r, x2i second vector values (real, imag) - input
+ *   vl       vector length - input
  * --------------------------------------------------------------------------*/
 void cpx2v_store(
     float* restrict pa,

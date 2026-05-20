@@ -1,9 +1,9 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * r4_stage_q1 —  specialized last radix-4 stage: grp_size=4, Q=1, W≡1
- *   vec       data array  — input/output
- *   N         FFT size — input
+ * r4_stage_q1 -  specialized last radix-4 stage: grp_size=4, Q=1, W≡1
+ *   vec       data array  - input/output
+ *   N         FFT size - input
  *   In this case twiddle factors are not used
  * --------------------------------------------------------------------------*/
 void r4_stage_q1(float* restrict vec, int32_t N)
@@ -53,11 +53,11 @@ void r4_stage_q1(float* restrict vec, int32_t N)
 }
 
 /* ---------------------------------------------------------------------------
- * r4_stage_q4 — specialized radix-4 stage for grp_size=16, Q=4, preloaded twiddle
+ * r4_stage_q4 - specialized radix-4 stage for grp_size=16, Q=4, preloaded twiddle
  *
- *   vec      data array (in-place) — input/output
- *   N        full FFT size — input
- *   tw_base  twiddle table block for this stage — input
+ *   vec      data array (in-place) - input/output
+ *   N        full FFT size - input
+ *   tw_base  twiddle table block for this stage - input
  *
  *    In this case twiddle factors loaded once, then reused for all groups
  * --------------------------------------------------------------------------*/
@@ -125,13 +125,13 @@ void r4_stage_q4(
 }
 
 /* ===========================================================================
- * r4_stage — single radix-4 DIF stage with software pipeline
+ * r4_stage - single radix-4 DIF stage with software pipeline
  *
- *   vec       data array  — input/output
- *   N         full FFT size — input
- *   grp_size  group size for this stage  — input
- *   tw_base   twiddle table block for this stage — input
- *   vlmax     maximum vector length — input
+ *   vec       data array  - input/output
+ *   N         full FFT size - input
+ *   grp_size  group size for this stage  - input
+ *   tw_base   twiddle table block for this stage - input
+ *   vlmax     maximum vector length - input
  *
  *   Generic case 
  * ===========================================================================*/

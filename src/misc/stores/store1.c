@@ -1,12 +1,12 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * cpx1v_store — store of one interleaved complex vector
+ * cpx1v_store - store of one interleaved complex vector
  *
- *   pc     destination pointer — input
- *   j      element offset within the group — input
- *   xr, xi vector values (real, imag) — input
- *   vl     vector length — input
+ *   pc     destination pointer - input
+ *   j      element offset within the group - input
+ *   xr, xi vector values (real, imag) - input
+ *   vl     vector length - input
  * --------------------------------------------------------------------------*/
 void cpx1v_store(
     float* restrict pc,

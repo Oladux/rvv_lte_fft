@@ -1,13 +1,13 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * r4_cpxt_load_stream — sequential load of radix-4 twiddle factors from stream
+ * r4_cpxt_load_stream - sequential load of radix-4 twiddle factors from stream
  *
- *   tw_cursor         pointer to current position in twiddle table — input/output
- *   vl                vector length — input
- *   w1r, w1i          W1 twiddle factor pointers (real, imag) — output
- *   w2r, w2i          W2 twiddle factor pointers (real, imag) — output
- *   w3r, w3i          W3 twiddle factor pointers (real, imag) — output
+ *   tw_cursor         pointer to current position in twiddle table - input/output
+ *   vl                vector length - input
+ *   w1r, w1i          W1 twiddle factor pointers (real, imag) - output
+ *   w2r, w2i          W2 twiddle factor pointers (real, imag) - output
+ *   w3r, w3i          W3 twiddle factor pointers (real, imag) - output
  * --------------------------------------------------------------------------*/
 void r4_cpxt_load_stream(
     const float* restrict *tw_cursor,

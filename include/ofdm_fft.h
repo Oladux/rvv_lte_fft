@@ -1,12 +1,12 @@
-#ifndef RVV_FFT_H
-#define RVV_FFT_H
+#ifndef OFDM_FFT_H
+#define OFDM_FFT_H
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
 #ifndef SQRT3_OVER_2
-#define SQRT3_OVER_2 3.14159265358979323846
+#define SQRT3_OVER_2 0.86602540378443864676f  
 #endif
 
 #include <stddef.h>
@@ -32,21 +32,23 @@
 #include "misc/stores/store1.h"
 #include "misc/stores/store2.h"
 
-#include "misc/utils/rvv_fft_utils.h"
+#include "misc/utils/ofdm_fft_utils.h"
 
 #include "tables/twiddles_radix2.h"
 #include "tables/twiddles_radix3.h"
 #include "tables/twiddles_radix4.h"
 #include "tables/bitrev.h"
 
-#include "misc/utils/rvv_fft_utils.h"
 
 #include "stages/stages_r2.h"
 #include "stages/stages_r3.h"
 #include "stages/stages_r4.h"
 
+#include "ofdm/cp.h"
 
 
-extern float* ofdm_fft(float* vec, int32_t N);
+extern float* ofdm_fft(float*, int32_t);
+extern float* ofdm_ifft(float*, int32_t);
+
 
 #endif

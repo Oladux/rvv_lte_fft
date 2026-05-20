@@ -1,11 +1,11 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * r2_cpxt_load_stream — sequential load of radix-2 twiddle factors from stream
+ * r2_cpxt_load_stream - sequential load of radix-2 twiddle factors from stream
  *
- *   tw_cursor   pointer to current position in twiddle table — input/output
- *   vl          vector length — input
- *   rw, iw      twiddle factor pointers (real, imag) — output
+ *   tw_cursor   pointer to current position in twiddle table - input/output
+ *   vl          vector length - input
+ *   rw, iw      twiddle factor pointers (real, imag) - output
  * --------------------------------------------------------------------------*/
 void r2_cpxt_load_stream(
     const float* restrict *tw_cursor,

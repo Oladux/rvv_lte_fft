@@ -1,12 +1,12 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * cpx1v_load — load of one interleaved complex vector
+ * cpx1v_load - load of one interleaved complex vector
  *
- *   pc    source pointer — input
- *   j     element offset within the group — input
- *   vl    vector length — input
- *   rc, ic vector pointers (real, imag) — output
+ *   pc    source pointer - input
+ *   j     element offset within the group - input
+ *   vl    vector length - input
+ *   rc, ic vector pointers (real, imag) - output
  * --------------------------------------------------------------------------*/
 void cpx1v_load(
     const float* restrict pc,

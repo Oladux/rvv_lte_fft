@@ -1,13 +1,13 @@
-#include "../include/rvv_fft.h"
+#include "../include/ofdm_fft.h"
 
 /* ---------------------------------------------------------------------------
- * cpx2v_load — load of two interleaved complex vectors
+ * cpx2v_load - load of two interleaved complex vectors
  *
- *   pa, pb   source pointers — input
- *   j        element offset within the group — input
- *   vl       vector length — input
- *   ra, ia   first vector pointers (real, imag) — output
- *   rb, ib   second vector pointers (real, imag) — output
+ *   pa, pb   source pointers - input
+ *   j        element offset within the group - input
+ *   vl       vector length - input
+ *   ra, ia   first vector pointers (real, imag) - output
+ *   rb, ib   second vector pointers (real, imag) - output
  * --------------------------------------------------------------------------*/
 void cpx2v_load(
     const float* restrict pa,
