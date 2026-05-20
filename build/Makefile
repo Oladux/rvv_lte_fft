@@ -2,14 +2,15 @@ MAKEFILE_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 PROJECT_ROOT = $(realpath $(MAKEFILE_DIR)/..)
 
 CC = /opt/nuclei/gcc/bin/riscv64-unknown-elf-gcc-14.2.1
-CFLAGS = -march=rv64gcv -mabi=lp64d -O3 -ftree-vectorize -specs=nano.specs -I$(PROJECT_ROOT)/include
-LDFLAGS = -lm -u _printf_float
+CFLAGS = -march=rv64gcv -mabi=lp64d -mcmodel=medany -O3 -ftree-vectorize  -I$(PROJECT_ROOT)/include -nostartfiles -nostdlib  -lgcc
+LDFLAGS = -lm -T baremetal_build/linker.ld baremetal_build/syscalls.c baremetal_build/crt0.S
 
 INCDIR = $(PROJECT_ROOT)/include
 SRCDIR = $(PROJECT_ROOT)/src
 TESTDIR = $(PROJECT_ROOT)/test
 TABLESDIR = $(SRCDIR)/tables
 MISCDIR = $(SRCDIR)/misc
+OFDMDIR = $(SRCDIR)/ofdm
 BUTTERFLIESDIR = $(SRCDIR)/butterflies
 STAGESDIR = $(SRCDIR)/stages
 UTILSDIR = $(MISCDIR)/utils
@@ -28,10 +29,11 @@ DIRS = $(OBJDIR) \
        $(OBJDIR)/twiddles \
        $(OBJDIR)/loads \
        $(OBJDIR)/stores \
+       $(OBJDIR)/ofdm \
        $(LIBDIR)
 
-LIB_SOURCES = $(SRCDIR)/rvv_fft.c \
-              $(UTILSDIR)/rvv_fft_utils.c \
+LIB_SOURCES = $(PROJECT_ROOT)/ofdm_fft.c \
+              $(UTILSDIR)/ofdm_fft_utils.c \
               $(BUTTERFLIESDIR)/butterfly_r2.c \
               $(BUTTERFLIESDIR)/butterfly_r3.c \
               $(BUTTERFLIESDIR)/butterfly_r4.c \
@@ -48,10 +50,11 @@ LIB_SOURCES = $(SRCDIR)/rvv_fft.c \
               $(LOADSDIR)/load2.c \
               $(STORESDIR)/store1.c \
               $(STORESDIR)/store2.c \
+              $(OFDMDIR)/cp.c \
               $(TABLESDIR)/bitrev.c	
 
-LIB_OBJECTS = $(OBJDIR)/rvv_fft.o \
-              $(OBJDIR)/utils/rvv_fft_utils.o \
+LIB_OBJECTS = $(OBJDIR)/ofdm_fft.o \
+              $(OBJDIR)/utils/ofdm_fft_utils.o \
               $(OBJDIR)/tables/twiddles_radix2.o \
               $(OBJDIR)/tables/twiddles_radix3.o \
               $(OBJDIR)/tables/twiddles_radix4.o \
@@ -68,12 +71,13 @@ LIB_OBJECTS = $(OBJDIR)/rvv_fft.o \
               $(OBJDIR)/loads/load2.o \
               $(OBJDIR)/stores/store1.o \
               $(OBJDIR)/stores/store2.o \
+              $(OBJDIR)/ofdm/cp.o \
               $(OBJDIR)/tables/bitrev.o
 
 LIBRARY = $(LIBDIR)/librvv_fft.a
 
-TEST_SOURCE = $(TESTDIR)/rvv_test_fft.c
-TEST_TARGET = rvv_test_fft
+TEST_SOURCE = $(TESTDIR)/test_suite.c
+TEST_TARGET = test_suite
 
 all: $(DIRS) $(LIBRARY) $(TEST_TARGET)
 
@@ -83,11 +87,11 @@ $(DIRS):
 
 
 # rvv_fft.c
-$(OBJDIR)/rvv_fft.o: $(SRCDIR)/rvv_fft.c | $(OBJDIR)
+$(OBJDIR)/ofdm_fft.o: $(PROJECT_ROOT)/ofdm_fft.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 
 # rvv_fft_utils.c (utils)
-$(OBJDIR)/utils/rvv_fft_utils.o: $(UTILSDIR)/rvv_fft_utils.c | $(OBJDIR)/utils
+$(OBJDIR)/utils/ofdm_fft_utils.o: $(UTILSDIR)/ofdm_fft_utils.c | $(OBJDIR)/utils
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 
 
@@ -116,10 +120,11 @@ $(OBJDIR)/loads/%.o: $(LOADSDIR)/%.c | $(OBJDIR)/loads
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 
 
-
 $(OBJDIR)/stores/%.o: $(STORESDIR)/%.c | $(OBJDIR)/stores
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 
+$(OBJDIR)/ofdm/%.o: $(OFDMDIR)/%.c | $(OBJDIR)/ofdm
+	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 
 $(LIBRARY): $(LIB_OBJECTS) | $(LIBDIR)
 	ar rcs $@ $^
