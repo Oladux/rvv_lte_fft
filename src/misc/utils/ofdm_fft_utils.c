@@ -87,13 +87,12 @@ void cpx_cmul(
     vfloat32m1_t* outr, vfloat32m1_t* outi,
     size_t vl)
 {
-    vfloat32m1_t arbr = __riscv_vfmul_vv_f32m1(ar, br, vl); // ar * br
-    vfloat32m1_t aibi = __riscv_vfmul_vv_f32m1(ai, bi, vl); // i*ai * i*bi
-    vfloat32m1_t aibr = __riscv_vfmul_vv_f32m1(ai, br, vl); // i*ai * br
-    vfloat32m1_t arbi = __riscv_vfmul_vv_f32m1(ar, bi, vl); // ar * i*bi
+    *outr = __riscv_vfmul_vv_f32m1(ar, br, vl); // outr = ar*br - ai*bi
+    *outr = __riscv_vfnmsac_vv_f32m1(*outr, ai, bi, vl);
 
-    *outr = __riscv_vfsub_vv_f32m1(arbr, aibi, vl); 
-    *outi = __riscv_vfadd_vv_f32m1(aibr, arbi, vl);
+    *outi = __riscv_vfmul_vv_f32m1(ai, br, vl);
+    *outi = __riscv_vfmacc_vv_f32m1(*outi, ar, bi, vl); // outi = ai*br + ar*bi
+
 }
 
 
