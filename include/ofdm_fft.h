@@ -18,21 +18,23 @@
 
 #include <riscv_vector.h>
 
-#include "butterflies/butterfly_r2.h"
-#include "butterflies/butterfly_r3.h"
-#include "butterflies/butterfly_r4.h"
+#include "../src/inline/helpers/cmul/cpx_cmul.h"
 
-#include "misc/twiddles/load_twiddle_r2.h"
-#include "misc/twiddles/load_twiddle_r3.h"
-#include "misc/twiddles/load_twiddle_r4.h"
+#include "../src/inline/butterflies/butterfly_r2.h"
+#include "../src/inline/butterflies/butterfly_r3.h"
+#include "../src/inline/butterflies/butterfly_r4.h"
 
-#include "misc/loads/load1.h"
-#include "misc/loads/load2.h"
+#include "../src/inline/helpers/twiddles/load_twiddle_r2.h"
+#include "../src/inline/helpers/twiddles/load_twiddle_r3.h"
+#include "../src/inline/helpers/twiddles/load_twiddle_r4.h"
 
-#include "misc/stores/store1.h"
-#include "misc/stores/store2.h"
+#include "../src/inline/helpers/loads/load1.h"
+#include "../src/inline/helpers/loads/load2.h"
 
-#include "misc/utils/ofdm_fft_utils.h"
+#include "../src/inline/helpers/stores/store1.h"
+#include "../src/inline/helpers/stores/store2.h"
+
+#include "utils/ofdm_fft_utils.h"
 
 #include "tables/twiddles_radix2.h"
 #include "tables/twiddles_radix3.h"

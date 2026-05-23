@@ -34,7 +34,7 @@ void r3_stage(
     size_t j = 0;
  
     /*  pipeline for thirds >= 2 * vlmax. Overlaps loading of next block with computation of current block */
-   
+    #if ENABLE_PIPELINE
     if (third >= 2 * vlmax)
     {
         /* pipeline preload */
@@ -109,7 +109,7 @@ void r3_stage(
             cpx1v_store (sc, j-vl, y2r, y2i, vl);
         }
     }
- 
+ #endif
     // section without pipeline for vlmax blocks
     for (; j + vlmax <= third; j += vlmax)
     {
@@ -170,5 +170,4 @@ void r3_stage(
             cpx2v_store(sa, sb, j, y0r, y0i, y1r, y1i, vl);
             cpx1v_store(sc, j, y2r, y2i, vl);
         }
-
 }

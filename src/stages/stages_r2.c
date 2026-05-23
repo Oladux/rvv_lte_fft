@@ -12,25 +12,21 @@ void r2_stage_h1(float* restrict vec, int32_t N)
 {
     const size_t ngroups = N >> 1;
     
-    float *pa = vec;
-    float *pb = vec + 2;
+    float *p = vec;
+
+    const size_t vlmax = __riscv_vsetvlmax_e32m1();  
 
     for (int32_t i = 0; i < ngroups; )
     {
-        size_t vl = __riscv_vsetvl_e32m1(ngroups - i);
+        size_t vl = (ngroups - i < vlmax) ? (ngroups - i) : vlmax;
 
+        vfloat32m1x4_t seg = __riscv_vlseg4e32_v_f32m1x4(p, vl);
+        
+        vfloat32m1_t ar = __riscv_vget_v_f32m1x4_f32m1(seg, 0);
+        vfloat32m1_t ai = __riscv_vget_v_f32m1x4_f32m1(seg, 1);
+        vfloat32m1_t br = __riscv_vget_v_f32m1x4_f32m1(seg, 2);
+        vfloat32m1_t bi = __riscv_vget_v_f32m1x4_f32m1(seg, 3);
 
-        vfloat32m1_t ar = __riscv_vle32_v_f32m1(pa + 0, vl); // segmented load of 4 vectors  
-        vfloat32m1_t ai = __riscv_vle32_v_f32m1(pa + 1, vl);
-        vfloat32m1_t br = __riscv_vle32_v_f32m1(pb + 0, vl);
-        vfloat32m1_t bi = __riscv_vle32_v_f32m1(pb + 1, vl); 
-  
-
-        ar = __riscv_vlse32_v_f32m1(pa + 0, 4 * sizeof(float), vl);
-        ai = __riscv_vlse32_v_f32m1(pa + 1, 4 * sizeof(float), vl);
-
-        br = __riscv_vlse32_v_f32m1(pb + 0, 4 * sizeof(float), vl);
-        bi = __riscv_vlse32_v_f32m1(pb + 1, 4 * sizeof(float), vl);
 
         vfloat32m1_t sumr = __riscv_vfadd_vv_f32m1(ar, br, vl);
         vfloat32m1_t sumi = __riscv_vfadd_vv_f32m1(ai, bi, vl);
@@ -38,14 +34,10 @@ void r2_stage_h1(float* restrict vec, int32_t N)
         vfloat32m1_t diffr = __riscv_vfsub_vv_f32m1(ar, br, vl);
         vfloat32m1_t diffi = __riscv_vfsub_vv_f32m1(ai, bi, vl);
 
-        __riscv_vsse32_v_f32m1(pa + 0, 4 * sizeof(float), sumr, vl);  // segmented store of 4 vectors
-        __riscv_vsse32_v_f32m1(pa + 1, 4 * sizeof(float), sumi, vl);
+       __riscv_vsseg4e32_v_f32m1x4(p,
+            __riscv_vcreate_v_f32m1x4(sumr, sumi, diffr, diffi), vl);
 
-        __riscv_vsse32_v_f32m1(pb + 0, 4 * sizeof(float), diffr, vl);
-        __riscv_vsse32_v_f32m1(pb + 1, 4 * sizeof(float), diffi, vl);
-
-        pa += 4 * vl;
-        pb += 4 * vl;
+        p += 4 * vl;
 
         i += vl;
 
@@ -64,71 +56,41 @@ void r2_stage_h2(float* restrict vec, int32_t N)
 {
     float* p = vec;
     const size_t ngroups = N >> 2;
-
-
-    float *p0 = vec + 0; /* a0 */
-    float *p1 = vec + 2; /* a1 */
-    float *p2 = vec + 4; /* b0 */
-    float *p3 = vec + 6; /* b1 */
-
-    const ptrdiff_t stride = 8 * sizeof(float);
-
-    for (int32_t i = 0; i < ngroups; )
+    const size_t vlmax = __riscv_vsetvlmax_e32m1();  
+    
+    for (size_t i = 0; i < ngroups;)
     {
-        size_t vl = __riscv_vsetvl_e32m1(ngroups - i);
-
-
-        vfloat32m1_t a0r =  __riscv_vlse32_v_f32m1(p0 + 0, stride, vl); // segmented load of 8 vectors
-        vfloat32m1_t a0i = __riscv_vlse32_v_f32m1(p0 + 1, stride, vl);
-
-        vfloat32m1_t a1r = __riscv_vlse32_v_f32m1(p1 + 0, stride, vl);
-        vfloat32m1_t a1i = __riscv_vlse32_v_f32m1(p1 + 1, stride, vl);
-
-        vfloat32m1_t b0r = __riscv_vlse32_v_f32m1(p2 + 0, stride, vl);
-        vfloat32m1_t b0i = __riscv_vlse32_v_f32m1(p2 + 1, stride, vl);
-
-        vfloat32m1_t b1r = __riscv_vlse32_v_f32m1(p3 + 0, stride, vl);
-        vfloat32m1_t b1i = __riscv_vlse32_v_f32m1(p3 + 1, stride, vl);
-
+        size_t vl = (ngroups - i < vlmax) ? (ngroups - i) : vlmax;
+        
+        vfloat32m1x8_t seg = __riscv_vlseg8e32_v_f32m1x8(p, vl);
+        
+        vfloat32m1_t a0r = __riscv_vget_v_f32m1x8_f32m1(seg, 0);
+        vfloat32m1_t a0i = __riscv_vget_v_f32m1x8_f32m1(seg, 1);
+        vfloat32m1_t a1r = __riscv_vget_v_f32m1x8_f32m1(seg, 2);
+        vfloat32m1_t a1i = __riscv_vget_v_f32m1x8_f32m1(seg, 3);
+        vfloat32m1_t b0r = __riscv_vget_v_f32m1x8_f32m1(seg, 4);
+        vfloat32m1_t b0i = __riscv_vget_v_f32m1x8_f32m1(seg, 5);
+        vfloat32m1_t b1r = __riscv_vget_v_f32m1x8_f32m1(seg, 6);
+        vfloat32m1_t b1i = __riscv_vget_v_f32m1x8_f32m1(seg, 7);
 
         vfloat32m1_t y0r = __riscv_vfadd_vv_f32m1(a0r, b0r, vl);
         vfloat32m1_t y0i = __riscv_vfadd_vv_f32m1(a0i, b0i, vl);
-
         vfloat32m1_t y2r = __riscv_vfsub_vv_f32m1(a0r, b0r, vl);
         vfloat32m1_t y2i = __riscv_vfsub_vv_f32m1(a0i, b0i, vl);
-
         vfloat32m1_t y1r = __riscv_vfadd_vv_f32m1(a1r, b1r, vl);
         vfloat32m1_t y1i = __riscv_vfadd_vv_f32m1(a1i, b1i, vl);
+        
+        vfloat32m1_t dr = __riscv_vfsub_vv_f32m1(a1r, b1r, vl);
+        vfloat32m1_t di = __riscv_vfsub_vv_f32m1(a1i, b1i, vl);
+        vfloat32m1_t y3r = di;
+        vfloat32m1_t y3i = __riscv_vfneg_v_f32m1(dr, vl);
 
-        vfloat32m1_t dr =
-            __riscv_vfsub_vv_f32m1(a1r, b1r, vl);
-        vfloat32m1_t di =
-            __riscv_vfsub_vv_f32m1(a1i, b1i, vl);
-       
-          vfloat32m1_t y3r = di;
-        vfloat32m1_t y3i =
-            __riscv_vfneg_v_f32m1(dr, vl);
+        __riscv_vsseg8e32_v_f32m1x8(p,
+            __riscv_vcreate_v_f32m1x8(y0r, y0i, y1r, y1i,
+                                       y2r, y2i, y3r, y3i), vl);
 
-        __riscv_vsse32_v_f32m1(p0 + 0, stride, y0r, vl);
-        __riscv_vsse32_v_f32m1(p0 + 1, stride, y0i, vl);
-
-        __riscv_vsse32_v_f32m1(p1 + 0, stride, y1r, vl);
-        __riscv_vsse32_v_f32m1(p1 + 1, stride, y1i, vl);
-
-        __riscv_vsse32_v_f32m1(p2 + 0, stride, y2r, vl);
-        __riscv_vsse32_v_f32m1(p2 + 1, stride, y2i, vl);
-
-        __riscv_vsse32_v_f32m1(p3 + 0, stride, y3r, vl);
-        __riscv_vsse32_v_f32m1(p3 + 1, stride, y3i, vl);
-
-        p0 += 8 * vl;
-        p1 += 8 * vl;
-        p2 += 8 * vl;
-        p3 += 8 * vl;
-
+        p += 8 * vl;
         i += vl;
-
-
     }
 }
 
@@ -167,7 +129,9 @@ void r2_stage(
 
         /*  pipeline for halfs >= 2 * vlmax. Overlaps loading of next block with computation of current block */
 
-        if (half >= 2 * vlmax)
+    #if ENABLE_PIPELINE
+
+        if (half >= 4 * vlmax)
         {
             /* pipeline preload */
 
@@ -222,7 +186,7 @@ void r2_stage(
 
             cpx2v_store(sa, sb, j-vl, y0r,y0i, y1r, y1i, vl);
         }
-
+#endif
         // section without pipeline for vlmax blocks
         for (; j + vlmax <= half; j += vlmax)
         {
@@ -252,7 +216,8 @@ void r2_stage(
         // tail for processing remaining elements
         if (j < half)
         {
-            const size_t vl = __riscv_vsetvl_e32m1((size_t)(half - j));
+            const size_t remaining = half - j;
+            const size_t vl = (remaining >= 4) ? 4 : remaining;  
 
             vfloat32m1_t a0r, a0i, 
                          a1r, a1i;
