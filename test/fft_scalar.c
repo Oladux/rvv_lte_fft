@@ -107,20 +107,3 @@ bool  FFT(float *Rdat, float *Idat, int N, int LogN, int Ft_Flag)
 
 
 
-void Test_FFT()
-{
-  static float Re[8];
-  static float Im[8];
-  float  p = 2 * 3.141592653589 / 8;
-
-  int i;
-  for(i=0; i<8; i++)
-  {
-    Re[i] = cos(p * i);  
-    Im[i] = 0.0;        
-  }
-
-  FFT(Re, Im, 8, 3, FT_DIRECT); 
-  
-
-}
