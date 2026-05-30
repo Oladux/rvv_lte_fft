@@ -20,7 +20,6 @@ static volatile float g_debug_ref[16];
 static volatile float g_debug_rvv[16];
 
 
-// Функция ilog2i (как в bench_scalar.c)
 static int ilog2i(int x) {
     int r = 0;
     while (x >>= 1) r++;

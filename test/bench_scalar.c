@@ -3,13 +3,11 @@
 #include <math.h>
 #include "fft_scalar.c" 
 
-// Прототип вашей скалярной FFT
 bool FFT(float *Rdat, float *Idat, int N, int LogN, int Ft_Flag);
  
 #define FT_DIRECT  -1
 #define FT_INVERSE  1
  
-/* ── Настройки ────────────────────────────────────────────────────────── */
 #define BENCH_WARMUP   3
 #define BENCH_REPEAT  11
  
@@ -18,19 +16,16 @@ static const int LTE_SIZES[] = { 128, 256, 512, 1024, 2048 };
  
 #define MAX_N      2048
 #define ALIGN      64
- 
-/* ── Буферы ───────────────────────────────────────────────────────────── */
+
 static float Rdat[MAX_N] __attribute__((aligned(ALIGN)));
 static float Idat[MAX_N] __attribute__((aligned(ALIGN)));
  
-/* ── Таблица Log2 ─────────────────────────────────────────────────────── */
 static int get_log2(int N) {
     int log = 0;
     while (N > 1) { N >>= 1; log++; }
     return log;
 }
  
-/* ── Структура результата ─────────────────────────────────────────────── */
 typedef struct {
     uint64_t N;
     uint64_t cycles_min;
@@ -41,9 +36,8 @@ typedef struct {
 } bench_result_t;
  
 volatile bench_result_t g_results[N_SIZES];
-volatile double g_errors[N_SIZES][3];  // Заглушка для GDB
+volatile double g_errors[N_SIZES][3];  
  
-/* ── CSR счётчики ─────────────────────────────────────────────────────── */
 static inline uint64_t csr_mcycle(void) {
     uint64_t v;
     __asm__ volatile ("csrr %0, mcycle" : "=r"(v));
@@ -56,7 +50,6 @@ static inline uint64_t csr_minstret(void) {
     return v;
 }
  
-/* ── Генератор псевдослучайного входа ────────────────────────────────── */
 static void fill_random(int N) {
     uint32_t s = 0xABCD1234u;
     for (int i = 0; i < N; i++) {
@@ -67,7 +60,6 @@ static void fill_random(int N) {
     }
 }
  
-/* ── Сортировка для медианы ───────────────────────────────────────────── */
 static void sort_u64(uint64_t* a, int n) {
     for (int i = 1; i < n; i++) {
         uint64_t key = a[i];
@@ -77,9 +69,7 @@ static void sort_u64(uint64_t* a, int n) {
     }
 }
  
-/* ── Обёртка для FFT с interleaved → split форматом ──────────────────── */
 static void fft_wrapper(float* vec, int N) {
-    // Конвертация interleaved [re0,im0,re1,im1,...] → split [Rdat, Idat]
     for (int i = 0; i < N; i++) {
         Rdat[i] = vec[2*i];
         Idat[i] = vec[2*i+1];
@@ -88,31 +78,28 @@ static void fft_wrapper(float* vec, int N) {
     int LogN = get_log2(N);
     FFT(Rdat, Idat, N, LogN, FT_DIRECT);
     
-    // Конвертация обратно
     for (int i = 0; i < N; i++) {
         vec[2*i]   = Rdat[i];
         vec[2*i+1] = Idat[i];
     }
 }
  
-/* ── Бенчмарк одного размера ─────────────────────────────────────────── */
+
 static void run_bench(int idx, int N) {
     // Прогрев
     for (int w = 0; w < BENCH_WARMUP; w++) {
         fill_random(N);
-        fft_wrapper((float*)Rdat, N);  // Используем Rdat как временный буфер
+        fft_wrapper((float*)Rdat, N);  
     }
  
     uint64_t cyc_buf[BENCH_REPEAT];
     uint64_t ins_buf[BENCH_REPEAT];
     
-    // Временный interleaved буфер на стеке (осторожно с размером!)
     float vec[2 * MAX_N] __attribute__((aligned(ALIGN)));
  
     for (int r = 0; r < BENCH_REPEAT; r++) {
         fill_random(N);
         
-        // Копируем в interleaved формат
         for (int i = 0; i < N; i++) {
             vec[2*i]   = Rdat[i];
             vec[2*i+1] = Idat[i];
@@ -146,7 +133,6 @@ static void run_bench(int idx, int N) {
     g_errors[idx][2] = 0.0;
 }
  
-/* ── main ─────────────────────────────────────────────────────────────── */
 int main(void) {
     for (int i = 0; i < N_SIZES; i++) {
         g_results[i].done = 0;
