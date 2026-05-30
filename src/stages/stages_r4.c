@@ -68,6 +68,7 @@ void r4_stage_q4(
 {
     const size_t vl = 4;
     const size_t quarter = 4; 
+    const size_t stride  = 2 * quarter;
 
     vfloat32m1_t w1r, w1i, w2r, w2i, w3r, w3i; // preload all twiddle factors for this stage
     {
@@ -83,17 +84,16 @@ void r4_stage_q4(
     for (size_t g = 0; g < N; g += 16)
     {
         float* base = &vec[2 * g];
+        vfloat32m1_t a0r,a0i, a1r,a1i, a2r,a2i, a3r,a3i;
 
-        vfloat32m1x8_t all = __riscv_vlseg8e32_v_f32m1x8(base, vl);
-        
-        vfloat32m1_t a0r = __riscv_vget_v_f32m1x8_f32m1(all, 0);
-        vfloat32m1_t a0i = __riscv_vget_v_f32m1x8_f32m1(all, 1);
-        vfloat32m1_t a1r = __riscv_vget_v_f32m1x8_f32m1(all, 2);
-        vfloat32m1_t a1i = __riscv_vget_v_f32m1x8_f32m1(all, 3);
-        vfloat32m1_t a2r = __riscv_vget_v_f32m1x8_f32m1(all, 4);
-        vfloat32m1_t a2i = __riscv_vget_v_f32m1x8_f32m1(all, 5);
-        vfloat32m1_t a3r = __riscv_vget_v_f32m1x8_f32m1(all, 6);
-        vfloat32m1_t a3i = __riscv_vget_v_f32m1x8_f32m1(all, 7);
+        vfloat32m1x2_t ta = __riscv_vlseg2e32_v_f32m1x2(base,            vl);
+        vfloat32m1x2_t tb = __riscv_vlseg2e32_v_f32m1x2(base + stride,   vl);
+        vfloat32m1x2_t tc = __riscv_vlseg2e32_v_f32m1x2(base + 2*stride, vl);
+        vfloat32m1x2_t td = __riscv_vlseg2e32_v_f32m1x2(base + 3*stride, vl);
+        a0r=__riscv_vget_v_f32m1x2_f32m1(ta,0); a0i=__riscv_vget_v_f32m1x2_f32m1(ta,1);
+        a1r=__riscv_vget_v_f32m1x2_f32m1(tb,0); a1i=__riscv_vget_v_f32m1x2_f32m1(tb,1);
+        a2r=__riscv_vget_v_f32m1x2_f32m1(tc,0); a2i=__riscv_vget_v_f32m1x2_f32m1(tc,1);
+        a3r=__riscv_vget_v_f32m1x2_f32m1(td,0); a3i=__riscv_vget_v_f32m1x2_f32m1(td,1);
 
 
         vfloat32m1_t y0r,y0i, y1r,y1i, y2r,y2i, y3r,y3i; // radix-4 butterfly with preloaded twiddles
@@ -102,9 +102,10 @@ void r4_stage_q4(
             w1r,w1i, w2r,w2i, w3r,w3i,
             &y0r,&y0i, &y1r,&y1i, &y2r,&y2i, &y3r,&y3i, vl);
 
-        __riscv_vsseg8e32_v_f32m1x8(base,
-            __riscv_vcreate_v_f32m1x8(y0r, y0i, y1r, y1i,
-                                       y2r, y2i, y3r, y3i), vl);
+        __riscv_vsseg2e32_v_f32m1x2(base,            __riscv_vcreate_v_f32m1x2(y0r,y0i), vl);
+        __riscv_vsseg2e32_v_f32m1x2(base + stride,   __riscv_vcreate_v_f32m1x2(y1r,y1i), vl);
+        __riscv_vsseg2e32_v_f32m1x2(base + 2*stride, __riscv_vcreate_v_f32m1x2(y2r,y2i), vl);
+        __riscv_vsseg2e32_v_f32m1x2(base + 3*stride, __riscv_vcreate_v_f32m1x2(y3r,y3i), vl);
     }
 }
 
