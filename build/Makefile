@@ -59,10 +59,6 @@ DIRS = \
 	$(OBJDIR)/ofdm \
 	$(LIBDIR)
 
-# =============================================================================
-# LIBRARY
-# =============================================================================
-
 LIB_SOURCES = \
 	$(PROJECT_ROOT)/ofdm_fft.c \
 	$(UTILSDIR)/ofdm_fft_utils.c \
@@ -89,28 +85,13 @@ LIB_OBJECTS = \
 
 LIBRARY = $(LIBDIR)/librvv_fft.a
 
-# =============================================================================
-# TARGETS
-# =============================================================================
-
-RVV_SOURCE    = $(TESTDIR)/bench_rvv.c
-RVV_TARGET    = bench_rvv
-
-SCALAR_SOURCE = $(TESTDIR)/bench_scalar.c
-SCALAR_TARGET = bench_scalar
 
 all: $(DIRS) $(LIBRARY) $(RVV_TARGET) $(SCALAR_TARGET)
 
-# =============================================================================
-# DIRECTORIES
-# =============================================================================
 
 $(DIRS):
 	mkdir -p $@
 
-# =============================================================================
-# OBJECTS
-# =============================================================================
 
 $(OBJDIR)/ofdm_fft.o: $(PROJECT_ROOT)/ofdm_fft.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
@@ -127,16 +108,10 @@ $(OBJDIR)/stages/%.o: $(STAGESDIR)/%.c | $(OBJDIR)/stages
 $(OBJDIR)/ofdm/%.o: $(OFDMDIR)/%.c | $(OBJDIR)/ofdm
 	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
 
-# =============================================================================
-# LIBRARY BUILD
-# =============================================================================
 
 $(LIBRARY): $(LIB_OBJECTS) | $(LIBDIR)
 	ar rcs $@ $^
 
-# =============================================================================
-# RVV BENCHMARK
-# =============================================================================
 
 $(RVV_TARGET): $(RVV_SOURCE) $(LIBRARY)
 	$(CC) $(CFLAGS) \
@@ -147,9 +122,6 @@ $(RVV_TARGET): $(RVV_SOURCE) $(LIBRARY)
 	-lrvv_fft \
 	$(LDFLAGS)
 
-# =============================================================================
-# SCALAR BENCHMARK
-# =============================================================================
 
 $(SCALAR_TARGET): $(SCALAR_SOURCE)
 	$(CC) $(CFLAGS) \
@@ -157,19 +129,13 @@ $(SCALAR_TARGET): $(SCALAR_SOURCE)
 	$< \
 	$(LDFLAGS)
 
-# =============================================================================
-# RUN TARGETS
-# =============================================================================
 
 bench-rvv: $(RVV_TARGET)
-	./bencmark_script/bench.sh --elf $(RVV_TARGET)
+	./bencmark_script/bench.sh --elf bench_rvv
 
 bench-scalar: $(SCALAR_TARGET)
-	./bencmark_script/bench.sh --elf $(SCALAR_TARGET)
+	./bencmark_script/bench.sh --elf bench_scalar
 
-# =============================================================================
-# CLEAN
-# =============================================================================
 
 clean:
 	rm -f $(RVV_TARGET)
@@ -177,11 +143,8 @@ clean:
 	rm -rf $(LIBDIR)
 	rm -rf $(OBJDIR)
 
-distclean: clean
-
 .PHONY: \
 	all \
 	bench-rvv \
 	bench-scalar \
 	clean \
-	distclean
